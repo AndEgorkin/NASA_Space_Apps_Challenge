@@ -11,6 +11,7 @@ from objects.Texture import Texture
 from lib.RoverMap import RoverMap
 from lib.RoverSave import RoverSave
 from lib.Survival import Survival
+from lib.Missions import Missions
 from objects.WaterWell import WaterWell
 
 class Main:
@@ -40,24 +41,26 @@ class Main:
         cls.mapOpen = False
         cls.saveElapsed = 0.0
         cls.survival = Survival()
+        cls.missions = Missions()
         cls.survivalTicks = pg.time.get_ticks()
         cls.scene = 'menu'
         try:
             while cls.isRunning:
-                if cls.scene != 'menu':
+                if cls.scene not in ('menu', 'depleted', 'won'):
                     now = pg.time.get_ticks()
                     cls.survival.update((now - cls.survivalTicks) / 1000.0)
                     cls.survivalTicks = now
-                    if cls.survival.depleted:
-                        cls.scene = 'depleted'
+                    ending = cls.missions.ending(cls.survival)
+                    if ending is not None:
+                        cls.scene = ending
                 if cls.scene == 'menu':
                     if not MainMenu(cls.screen).run():
                         break
                     cls.scene = 'base'
                     cls.survivalTicks = pg.time.get_ticks()
                     cls.clock.tick()
-                elif cls.scene == 'depleted':
-                    cls.showDepleted()
+                elif cls.scene in ('depleted', 'won'):
+                    cls.showEnding()
                 elif cls.scene == 'base':
                     deltaTime = cls.clock.tick(60) / 1000.0
                     for event in pg.event.get():
@@ -71,6 +74,8 @@ class Main:
                         if action == 'water':
                             cls.survival.waterPlants()
                         if action == 'rover':
+                            if cls.missions.analyseAtBase(cls.survival, cls.rover.coords if cls.rover else RoverMap.spawnCoords):
+                                break
                             cls.startRover()
                             break
                     if cls.isRunning and cls.scene == 'base':
@@ -78,6 +83,7 @@ class Main:
                         cls.base.render()
                         hint = 'E: water plants (+food)' if cls.base.canWaterPlants() else ''
                         cls.survival.render(cls.screen, hint)
+                        cls.missions.renderStatus(cls.screen)
                         pg.display.flip()
                 else:
                     cls.tick()
@@ -86,19 +92,26 @@ class Main:
             pg.quit()
 
     @classmethod
-    def showDepleted(cls):
+    def showEnding(cls):
+        if cls.scene == 'won':
+            reason = 'Все 8 миссий выполнены. Спасательный корабль: вы летите домой!'
+        else:
+            reason = 'Кислород закончился. Вы проиграли.' if cls.survival.oxygen <= 0 else 'Еда закончилась. Вы проиграли.'
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 cls.isRunning = False
             elif event.type == pg.KEYDOWN and event.key == pg.K_RETURN:
                 cls.survival = Survival()
+                cls.missions = Missions()
+                cls.mapOpen = False
                 cls.base = BaseLocation(cls.screen)
                 cls.scene = 'base'
                 cls.survivalTicks = pg.time.get_ticks()
         cls.screen.fill('#101823')
-        reason = 'Oxygen depleted' if cls.survival.oxygen <= 0 else 'Food depleted'
-        label = pg.font.Font(None, 40).render(reason + ' - Enter: retry', True, 'white')
+        label = pg.font.Font(None, 30).render(reason, True, 'white')
         cls.screen.blit(label, label.get_rect(center=cls.screen.get_rect().center))
+        prompt = pg.font.Font(None, 28).render('Enter: новая попытка', True, '#ffdc8a')
+        cls.screen.blit(prompt, prompt.get_rect(center=(cls.screen.get_width()//2, cls.screen.get_height()//2+50)))
         pg.display.flip()
         cls.clock.tick(60)
 
@@ -138,9 +151,10 @@ class Main:
                 cls.mapOpen = not cls.mapOpen
             if event.type == pg.KEYDOWN and event.key == pg.K_e and not cls.mapOpen:
                 cls.survival.roverAction(cls.rover.coords)
+                cls.missions.roverAction(cls.rover.coords, cls.survival)
 
         if cls.mapOpen:
-            cls.roverMap.render(cls.screen, cls.rover)
+            cls.roverMap.render(cls.screen, cls.rover, cls.missions)
             cls.survival.render(cls.screen)
             pg.display.flip()
             cls.clock.tick(60)
@@ -169,11 +183,14 @@ class Main:
         for texture in cls.buffer:
             texture.render(cls.screen, cameraOffset)
 
+        cls.missions.renderWorld(cls.screen, cameraOffset)
         EnvironmentManager.render(cls.screen)
         hint = pg.font.Font(None, 24).render('M: map  |  Esc: base', True, 'white')
         cls.screen.blit(hint, (16, 16))
 
-        cls.survival.render(cls.screen, cls.survival.roverHint(cls.rover.coords))
+        actionHint = cls.missions.hint(cls.rover.coords) or cls.survival.roverHint(cls.rover.coords)
+        cls.survival.render(cls.screen, actionHint)
+        cls.missions.renderStatus(cls.screen)
         pg.display.flip()
         cls.clock.tick(60)
 

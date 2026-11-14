@@ -14,6 +14,8 @@ class Survival:
         self.food = 100.0
         self.water = 0
         self.cargoWater = 0
+        self.deliveredWater = 0
+        self.wateredPlants = 0
         self.message = ''
         self.messageTime = 0.0
         self.font = pg.font.Font(None, 23)
@@ -30,7 +32,7 @@ class Survival:
 
     def notify(self, message):
         self.message = message
-        self.messageTime = 4
+        self.messageTime = 9
 
     def roverAction(self, coords):
         point = pg.Vector2(coords)
@@ -43,6 +45,7 @@ class Survival:
                 self.notify('Water collected into rover cargo.')
         elif point.distance_to(RoverMap.baseCoords) <= 650:
             if self.cargoWater:
+                self.deliveredWater += self.cargoWater
                 self.water += self.cargoWater
                 self.cargoWater = 0
                 self.notify('Water delivered to base inventory.')
@@ -55,6 +58,7 @@ class Survival:
         elif self.food >= 99.9:
             self.notify('Food reserves are full.')
         else:
+            self.wateredPlants += 1
             self.water -= 1
             self.food = min(100.0, self.food + 30)
             self.notify('Plants watered: +30 food, -1 water.')

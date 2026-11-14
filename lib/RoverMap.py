@@ -48,14 +48,15 @@ class RoverMap:
             factors.append((inner.height / 2) / abs(direction.y))
         return center + direction * min(factors)
 
-    def render(self, screen, rover):
+    def render(self, screen, rover, missions=None):
         width, height = screen.get_size()
-        scale = min((width - 80) / self.imageSize[0], (height - 120) / self.imageSize[1])
+        rightPanel = 350 if missions is not None else 0
+        scale = min((width - 80 - rightPanel) / self.imageSize[0], (height - 120) / self.imageSize[1])
         size = (round(self.imageSize[0] * scale), round(self.imageSize[1] * scale))
         if self.size != size:
             self.scaled = pg.transform.smoothscale(self.image, size)
             self.size = size
-        rect = self.scaled.get_rect(center=(width // 2, height // 2))
+        rect = self.scaled.get_rect(center=((width - rightPanel) // 2, height // 2))
         screen.fill('#101823')
         screen.blit(self.scaled, rect)
         pg.draw.rect(screen, '#adb9c7', rect, 2)
@@ -66,9 +67,20 @@ class RoverMap:
         pg.draw.rect(screen, '#7bdefb', (base.x-7,base.y-7,14,14))
         screen.blit(self.font.render('BASE', True, '#b5edff'), base + (12,-12))
         canyon = project(self.canyonPixel)
-        pg.draw.circle(screen, '#ffb544', canyon, 15)
-        question = self.font.render('?', True, '#101823')
-        screen.blit(question, question.get_rect(center=canyon))
+        pg.draw.circle(screen, '#68c9ed', canyon, 8)
+        waterLabel = self.font.render('Каньон с водой', True, '#a0e6ff')
+        screen.blit(waterLabel, canyon + (10, 10))
+        if missions is not None:
+            for i, definition in enumerate(missions.definitions):
+                marker = project(missions.target(i))
+                color = '#83d674' if missions.done(i) else '#ffb544'
+                pg.draw.circle(screen, '#101823', marker, 11)
+                number = self.font.render(str(i+1), True, color)
+                screen.blit(number, number.get_rect(center=marker))
+                # Full titles and locations are listed in the adjacent panel.
+                name = self.font.render(definition[1], True, color)
+                screen.blit(name, marker + ((12,18) if i == 7 else (12,-18)))
+            missions.renderList(screen, width-rightPanel+4, 210)
         point = project(self.worldToMap(rover.coords))
         if rect.collidepoint(point):
             forward = self.headingOnMap(rover.rotation)
@@ -80,5 +92,5 @@ class RoverMap:
             tangent = (point - pg.Vector2(rect.center)).normalize().rotate(90)
             pg.draw.line(screen, '#50ff98', edge-tangent*16, edge+tangent*16, 7)
             screen.blit(self.font.render('ROVER', True, '#50ff98'), edge + (10,-25))
-        label = 'M / Esc: close   |   Green: rover   Blue: base   ?: canyon'
+        label = 'M / Esc: закрыть | Зелёный: ровер | Синий: база / вода'
         screen.blit(self.font.render(label, True, 'white'), (24,20))
