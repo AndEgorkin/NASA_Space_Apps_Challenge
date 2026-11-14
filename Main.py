@@ -7,6 +7,9 @@ from lib.MainMenu import MainMenu
 from lib.EnvironmentManager import EnvironmentManager
 from lib.TerrainManager import TerrainManager
 from objects.Rover import Rover
+from objects.Texture import Texture
+from lib.RoverMap import RoverMap
+from lib.RoverSave import RoverSave
 
 class Main:
     screen = None
@@ -31,6 +34,9 @@ class Main:
         pg.display.set_caption('NASA Competition Program')
 
         cls.base = BaseLocation(cls.screen)
+        cls.roverMap = RoverMap()
+        cls.mapOpen = False
+        cls.saveElapsed = 0.0
         cls.scene = 'menu'
         try:
             while cls.isRunning:
@@ -59,16 +65,21 @@ class Main:
                 else:
                     cls.tick()
         finally:
+            RoverSave.save(cls.rover)
             pg.quit()
 
     @classmethod
     def startRover(cls):
         if cls.rover is None:
             cls.rover = Rover()
+            RoverSave.load(cls.rover, RoverMap.spawnCoords)
+            cls.buffer.append(Texture('base.exterior', RoverMap.baseCoords, 0, 0.6,
+                                      AssetManager.get('assets.texture.base-exterior'), 50))
             cls.camera = Camera(cls.rover.coords)
             EnvironmentManager.dustTexture = AssetManager.get('assets.texture.dust')
             cls.buffer.append(cls.rover)
             TerrainManager.loadInitialChunks(cls.rover.coords, cls.buffer)
+        cls.mapOpen = False
         cls.scene = 'rover'
         cls.clock.tick()
 
@@ -79,11 +90,27 @@ class Main:
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 cls.isRunning = False
+                RoverSave.save(cls.rover)
                 return
             if event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE:
+                if getattr(cls, 'mapOpen', False):
+                    cls.mapOpen = False
+                    continue
+                RoverSave.save(cls.rover)
                 cls.scene = 'base'
                 return
+            if event.type == pg.KEYDOWN and event.key == pg.K_m:
+                cls.mapOpen = not cls.mapOpen
 
+        if cls.mapOpen:
+            cls.roverMap.render(cls.screen, cls.rover)
+            pg.display.flip()
+            cls.clock.tick(60)
+            return
+        cls.saveElapsed += deltaTime
+        if cls.saveElapsed >= 5:
+            RoverSave.save(cls.rover)
+            cls.saveElapsed = 0.0
         TerrainManager.update(cls.rover.coords, cls.buffer)
         screenSize = cls.screen.get_size()
         EnvironmentManager.update(deltaTime, screenSize)
@@ -105,6 +132,8 @@ class Main:
             texture.render(cls.screen, cameraOffset)
 
         EnvironmentManager.render(cls.screen)
+        hint = pg.font.Font(None, 24).render('M: map  |  Esc: base', True, 'white')
+        cls.screen.blit(hint, (16, 16))
 
         pg.display.flip()
         cls.clock.tick(60)

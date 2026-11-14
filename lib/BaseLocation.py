@@ -46,7 +46,7 @@ class BaseLocation:
             'crew': [pg.Rect(62, 34, 120, 30)],
             'plants': [pg.Rect(27, 38, 91, 91), pg.Rect(120, 38, 91, 91)]
         }
-        sheet = pg.image.load(str(root / 'player' / 'astronaut-walk.png')).convert_alpha()
+        sheet = pg.image.load(str(root / 'player' / 'operator-walk.png')).convert_alpha()
         cellWidth, cellHeight = sheet.get_width() // 4, sheet.get_height() // 4
         self.walkFrames = []
         for row in range(4):

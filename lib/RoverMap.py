@@ -1,0 +1,84 @@
+from pathlib import Path
+import pygame as pg
+
+
+class RoverMap:
+    # One image pixel = 16 world units, north is positive world Y.
+    imageSize = (768, 558)
+    unitsPerPixel = 16.0
+    basePixel = pg.Vector2(480, 365)
+    canyonPixel = pg.Vector2(280, 295)
+    baseCoords = (0.0, 0.0)
+    spawnCoords = (0.0, -500.0)
+
+    def __init__(self):
+        root = Path(__file__).resolve().parent.parent / 'assets'
+        self.image = pg.image.load(str(root / 'map' / 'GameMap.webp')).convert()
+        self.font = pg.font.Font(None, 26)
+        self.scaled = None
+        self.size = None
+
+    @classmethod
+    def worldToMap(cls, coords):
+        return pg.Vector2(cls.basePixel.x + coords[0] / cls.unitsPerPixel,
+                          cls.basePixel.y - coords[1] / cls.unitsPerPixel)
+
+    @classmethod
+    def mapToWorld(cls, coords):
+        return ((coords[0] - cls.basePixel.x) * cls.unitsPerPixel,
+                (cls.basePixel.y - coords[1]) * cls.unitsPerPixel)
+
+    @staticmethod
+    def edgePosition(point, rect):
+        # Intersect the ray from the map center with its inset border.
+        inner = rect.inflate(-24, -24)
+        center = pg.Vector2(inner.center)
+        direction = pg.Vector2(point) - center
+        if not direction.length_squared():
+            return center
+        factors = []
+        if direction.x:
+            factors.append((inner.width / 2) / abs(direction.x))
+        if direction.y:
+            factors.append((inner.height / 2) / abs(direction.y))
+        return center + direction * min(factors)
+
+    def render(self, screen, rover):
+        width, height = screen.get_size()
+        scale = min((width - 80) / self.imageSize[0], (height - 120) / self.imageSize[1])
+        size = (round(self.imageSize[0] * scale), round(self.imageSize[1] * scale))
+        if self.size != size:
+            self.scaled = pg.transform.smoothscale(self.image, size)
+            self.size = size
+        rect = self.scaled.get_rect(center=(width // 2, height // 2))
+        screen.fill('#101823')
+        screen.blit(self.scaled, rect)
+        pg.draw.rect(screen, '#adb9c7', rect, 2)
+        def project(point):
+            return pg.Vector2(rect.x + point[0] * size[0] / self.imageSize[0],
+                              rect.y + point[1] * size[1] / self.imageSize[1])
+        base = project(self.basePixel)
+        pg.draw.rect(screen, '#7bdefb', (base.x-7,base.y-7,14,14))
+        screen.blit(self.font.render('BASE', True, '#b5edff'), base + (12,-12))
+        canyon = project(self.canyonPixel)
+        pg.draw.circle(screen, '#ffb544', canyon, 15)
+        question = self.font.render('?', True, '#101823')
+        screen.blit(question, question.get_rect(center=canyon))
+        point = project(self.worldToMap(rover.coords))
+        if rect.collidepoint(point):
+            # Rotation follows the rover's existing world heading (zero points south).
+            forward = pg.Vector2(0, 1).rotate(rover.rotation)
+            side = forward.rotate(90)
+            pg.draw.polygon(screen, '#50ff98', [point+forward*12,point-forward*8+side*7,point-forward*8-side*7])
+            pg.draw.circle(screen, '#102d22', point, 3)
+        else:
+            edge = self.edgePosition(point, rect)
+            tangent = (point - pg.Vector2(rect.center)).normalize().rotate(90)
+            pg.draw.line(screen, '#50ff98', edge-tangent*16, edge+tangent*16, 7)
+            screen.blit(self.font.render('ROVER', True, '#50ff98'), edge + (10,-25))
+        label = 'M / Esc: close   |   Green: rover   Blue: base   ?: canyon'
+        screen.blit(self.font.render(label, True, 'white'), (24,20))
+        # Scale bar shares the exact projection used by all markers.
+        length = 1000 / self.unitsPerPixel * size[0] / self.imageSize[0]
+        pg.draw.line(screen, 'white', (rect.left+20,rect.bottom-22), (rect.left+20+length,rect.bottom-22),3)
+        screen.blit(self.font.render('1000 world units',True,'white'),(rect.left+20,rect.bottom-50))
