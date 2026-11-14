@@ -7,12 +7,12 @@ class MainMenu:
     def __init__(self, screen):
         self.screen = screen
         self.assetDirectory = Path(__file__).resolve().parent.parent / 'assets' / 'menu'
-        self.background = self._loadImage('background.webp')
+        self.background = self._loadImage('background.png')
         self.buttons = []
         self.font = pg.font.Font(None, 48)
         for index, name in enumerate(('play', 'load', 'settings', 'quit')):
             self.buttons.append((name, pg.Rect(32, 32 + index * 120, 200, 100),
-                                 self._loadImage(name + '.webp')))
+                                 self._loadImage(name + '.png')))
 
     def _loadImage(self, filename):
         path = self.assetDirectory / filename

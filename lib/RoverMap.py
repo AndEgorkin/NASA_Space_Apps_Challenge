@@ -13,7 +13,7 @@ class RoverMap:
 
     def __init__(self):
         root = Path(__file__).resolve().parent.parent / 'assets'
-        self.image = pg.image.load(str(root / 'map' / 'GameMap.webp')).convert()
+        self.image = pg.image.load(str(root / 'map' / 'GameMap.png')).convert()
         self.font = pg.font.Font(None, 26)
         self.scaled = None
         self.size = None

@@ -7,9 +7,9 @@ import pygame as pg
 class BaseLocation:
     # Coordinates are measured in the original 240 x 140 room artwork.
     roomFiles = {
-        'main': 'CorrdorMain.webp', 'corridor': 'Corridor1.webp',
-        'control': 'ControlRoom.webp', 'crew': 'CrewCabins.webp',
-        'plants': 'PlantRoom.webp'
+        'main': 'CorrdorMain.png', 'corridor': 'Corridor1.png',
+        'control': 'ControlRoom.png', 'crew': 'CrewCabins.png',
+        'plants': 'PlantRoom.png'
     }
     roomNames = {
         'main': 'Central corridor', 'corridor': 'East corridor',
