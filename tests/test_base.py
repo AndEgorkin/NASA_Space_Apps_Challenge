@@ -5,6 +5,7 @@ import unittest
 from collections import deque
 import pygame as pg
 from lib.BaseLocation import BaseLocation
+from lib.AssetManager import AssetManager
 from Main import Main
 
 
@@ -13,6 +14,7 @@ class BaseTests(unittest.TestCase):
     def setUpClass(cls):
         pg.init()
         cls.screen = pg.display.set_mode((1200, 830))
+        AssetManager.init()
 
     def setUp(self):
         self.base = BaseLocation(self.screen)

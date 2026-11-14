@@ -1,4 +1,4 @@
-from pathlib import Path
+from lib.AssetManager import AssetManager
 
 import pygame as pg
 
@@ -6,19 +6,12 @@ import pygame as pg
 class MainMenu:
     def __init__(self, screen):
         self.screen = screen
-        self.assetDirectory = Path(__file__).resolve().parent.parent / 'assets' / 'menu'
-        self.background = self._loadImage('background.png')
+        self.background = AssetManager.get('assets.menu.background')
         self.buttons = []
         self.font = pg.font.Font(None, 48)
         for index, name in enumerate(('play', 'load', 'settings', 'quit')):
             self.buttons.append((name, pg.Rect(32, 32 + index * 120, 200, 100),
-                                 self._loadImage(name + '.png')))
-
-    def _loadImage(self, filename):
-        path = self.assetDirectory / filename
-        if path.is_file():
-            return pg.image.load(str(path)).convert_alpha()
-        return None
+                                 AssetManager.get('assets.menu.' + name)))
 
     def run(self):
         clock = pg.time.Clock()

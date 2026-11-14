@@ -23,9 +23,9 @@ class Main:
     def run(cls):
         pg.init()
         pg.mixer.init()
-        AssetManager.init()
 
         cls.screen = pg.display.set_mode((1200, 830))
+        AssetManager.init()
         cls.clock = pg.time.Clock()
         cls.buffer = []
         cls.camera = None

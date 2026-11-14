@@ -7,6 +7,7 @@ from pathlib import Path
 from types import SimpleNamespace
 import pygame as pg
 from lib.RoverMap import RoverMap
+from lib.AssetManager import AssetManager
 from lib.RoverSave import RoverSave
 
 
@@ -52,6 +53,6 @@ class MapTests(unittest.TestCase):
                 RoverSave.path=original
 
     def testMapRendersInsideAndOutside(self):
-        pg.init();screen=pg.display.set_mode((1200,830)); chart=RoverMap()
+        pg.init();screen=pg.display.set_mode((1200,830)); AssetManager.init(); chart=RoverMap()
         for position in [(0,0),(50000,0),(0,50000),(-50000,-50000)]:
             chart.render(screen,SimpleNamespace(coords=position,rotation=45))

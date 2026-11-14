@@ -1,4 +1,4 @@
-from pathlib import Path
+from lib.AssetManager import AssetManager
 import pygame as pg
 
 
@@ -12,8 +12,7 @@ class RoverMap:
     spawnCoords = (0.0, -500.0)
 
     def __init__(self):
-        root = Path(__file__).resolve().parent.parent / 'assets'
-        self.image = pg.image.load(str(root / 'map' / 'GameMap.png')).convert()
+        self.image = AssetManager.get('assets.map.GameMap')
         self.font = pg.font.Font(None, 26)
         self.scaled = None
         self.size = None

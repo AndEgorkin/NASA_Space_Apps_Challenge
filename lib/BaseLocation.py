@@ -1,4 +1,4 @@
-from pathlib import Path
+from lib.AssetManager import AssetManager
 import math
 
 import pygame as pg
@@ -6,10 +6,10 @@ import pygame as pg
 
 class BaseLocation:
     # Coordinates are measured in the original 240 x 140 room artwork.
-    roomFiles = {
-        'main': 'CorrdorMain.png', 'corridor': 'Corridor1.png',
-        'control': 'ControlRoom.png', 'crew': 'CrewCabins.png',
-        'plants': 'PlantRoom.png'
+    roomAssets = {
+        'main': 'assets.base.CorrdorMain', 'corridor': 'assets.base.Corridor1',
+        'control': 'assets.base.ControlRoom', 'crew': 'assets.base.CrewCabins',
+        'plants': 'assets.base.PlantRoom'
     }
     roomNames = {
         'main': 'Central corridor', 'corridor': 'East corridor',
@@ -27,11 +27,10 @@ class BaseLocation:
 
     def __init__(self, screen):
         self.screen = screen
-        root = Path(__file__).resolve().parent.parent / 'assets'
         self.rooms = {}
         self.wallMasks = {}
-        for name, filename in self.roomFiles.items():
-            image = pg.image.load(str(root / 'base' / filename)).convert()
+        for name, assetKey in self.roomAssets.items():
+            image = AssetManager.get(assetKey)
             self.rooms[name] = image
             mask = pg.mask.Mask(image.get_size())
             for x in range(image.get_width()):
@@ -46,7 +45,7 @@ class BaseLocation:
             'crew': [pg.Rect(62, 34, 120, 30)],
             'plants': [pg.Rect(27, 38, 91, 91), pg.Rect(120, 38, 91, 91)]
         }
-        sheet = pg.image.load(str(root / 'player' / 'operator-walk.png')).convert_alpha()
+        sheet = AssetManager.get('assets.player.operator-walk')
         cellWidth, cellHeight = sheet.get_width() // 4, sheet.get_height() // 4
         cells = [[sheet.subsurface((column * cellWidth, row * cellHeight,
                                     cellWidth, cellHeight))
