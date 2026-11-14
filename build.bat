@@ -1,0 +1,1 @@
+py -m PyInstaller --onefile --windowed --add-data "assets;assets" main.py
