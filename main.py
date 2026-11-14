@@ -9,10 +9,11 @@ class Main:
     SCREEN = pg.display.set_mode((1200, 830))
     CLOCK = pg.time.Clock()
     pg.display.set_caption('Caption')
+
+    buffer = []
+    scheduler = []
     
     isRunning = True
-    buffer = []
-
     @staticmethod
     def init():
         while Main.isRunning:
