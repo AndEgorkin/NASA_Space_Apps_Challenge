@@ -48,17 +48,17 @@ class BaseLocation:
         }
         sheet = pg.image.load(str(root / 'player' / 'operator-walk.png')).convert_alpha()
         cellWidth, cellHeight = sheet.get_width() // 4, sheet.get_height() // 4
-        self.walkFrames = []
-        for row in range(4):
-            frames = []
-            for column in range(4):
-                cell = sheet.subsurface((column * cellWidth, row * cellHeight,
-                                         cellWidth, cellHeight))
-                # Common crop preserves the walk cycle's alignment within every cell.
-                crop = cell.subsurface((round(cellWidth * 0.2), round(cellHeight * 0.16),
-                                        round(cellWidth * 0.6), round(cellHeight * 0.74)))
-                frames.append(crop.copy())
-            self.walkFrames.append(frames)
+        cells = [[sheet.subsurface((column * cellWidth, row * cellHeight,
+                                    cellWidth, cellHeight))
+                  for column in range(4)] for row in range(4)]
+        # Use the union of every frame's visible bounds: the north-facing head
+        # sits higher in its cell than the south-facing head.
+        cropBounds = cells[0][0].get_bounding_rect()
+        for row in cells:
+            for cell in row:
+                cropBounds.union_ip(cell.get_bounding_rect())
+        self.walkFrames = [[cell.subsurface(cropBounds).copy() for cell in row]
+                           for row in cells]
         self._scaledFrames = {}
         self.facing = 0
         self.walkTime = 0.0
