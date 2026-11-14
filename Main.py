@@ -1,4 +1,5 @@
 import pygame as pg
+
 from lib.AssetManager import AssetManager
 from lib.Texture import Texture
 

@@ -1,6 +1,7 @@
 import pygame as pg
-from pathlib import Path
 import sys
+
+from pathlib import Path
 
 class AssetManager:
     LOADED = {}
@@ -18,13 +19,17 @@ class AssetManager:
         for path in directory.iterdir():
             if path.is_dir():
                 AssetManager.init(path)
-            else:
-                key = 'assets.' + '.'.join(path.relative_to(AssetManager.BASE).with_suffix('').parts)
-                if '\\texture\\' in str(path): # Все текстуры хранятся по пути assets/texture
-                    AssetManager.LOADED[key] = pg.image.load(path)
-                elif '\\sound\\' in str(path): # Все звуки хранятся по пути assets/sound
-                    AssetManager.LOADED[key] = pg.mixer.Sound(path)
-                print(f'[INFO] Загружен ресурс по ключу {key}')
+                continue
+
+            relative = path.relative_to(AssetManager.BASE)
+            key = 'assets.' + '.'.join(relative.with_suffix('').parts)
+
+            if 'texture' in relative.parts:
+                AssetManager.LOADED[key] = pg.image.load(path)
+            elif 'sound' in relative.parts:
+                AssetManager.LOADED[key] = pg.mixer.Sound(path)
+
+            print(f'[INFO] Загружен ресурс по ключу {key}')
 
     @staticmethod
     def get(key):
