@@ -5,7 +5,7 @@ class Texture:
 
     def __init__(self, id, coords, rotation, scale, texture, priority=0):
         if id in Texture.ids:
-            raise Exception('[ERROR] Идентификатор текстуры должен быть уникальным')
+            raise Exception('[ERROR] Texture ID must be unique')
         Texture.ids.append(id)
         self.id = id
         self.coords = list(coords)

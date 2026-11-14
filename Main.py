@@ -94,9 +94,9 @@ class Main:
     @classmethod
     def showEnding(cls):
         if cls.scene == 'won':
-            reason = 'Все 8 миссий выполнены. Спасательный корабль: вы летите домой!'
+            reason = 'All 8 missions complete. Rescue has arrived: you are going home!'
         else:
-            reason = 'Кислород закончился. Вы проиграли.' if cls.survival.oxygen <= 0 else 'Еда закончилась. Вы проиграли.'
+            reason = 'Oxygen depleted. Mission failed.' if cls.survival.oxygen <= 0 else 'Food depleted. Mission failed.'
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 cls.isRunning = False
@@ -110,7 +110,7 @@ class Main:
         cls.screen.fill('#101823')
         label = pg.font.Font(None, 30).render(reason, True, 'white')
         cls.screen.blit(label, label.get_rect(center=cls.screen.get_rect().center))
-        prompt = pg.font.Font(None, 28).render('Enter: новая попытка', True, '#ffdc8a')
+        prompt = pg.font.Font(None, 28).render('Enter: new attempt', True, '#ffdc8a')
         cls.screen.blit(prompt, prompt.get_rect(center=(cls.screen.get_width()//2, cls.screen.get_height()//2+50)))
         pg.display.flip()
         cls.clock.tick(60)

@@ -6,30 +6,30 @@ from objects.Texture import Texture
 class Missions:
     # Prototype positions on the supplied image, not georeferenced survey sites.
     definitions = (
-        ('Древняя вода', 'Hebes / Candor', ((315,205),),
-         ('Взять образец слоистых пород', 'Измерить минералы'),
-         'Минералы могут указывать на древнее взаимодействие с водой.'),
-        ('Огромный оползень', 'Ius Chasma', ((170,295),),
-         ('Нанести обломки на карту', 'Изучить обнажённые слои'),
-         'Обломки и слои помогают восстановить историю оползня.'),
-        ('Тёмные полосы', 'Melas / Coprates', ((410,300),),
-         ('Сравнить сезонные снимки', 'Провести дистанционное измерение'),
-         'Причина полос спорна: соли и сухие потоки возможны; жидкая вода не доказана.'),
-        ('Геологический архив', 'Hebes Chasma', ((255,165),),
-         ('Сфотографировать слои', 'Сопоставить порядок слоёв'),
-         'Порядок слоёв даёт относительную последовательность событий.'),
-        ('Подземный резервуар', 'Eastern Valles', ((600,280),),
-         ('Картировать провалы', 'Сравнить высоты русел'),
-         'Древние русла совместимы с выходом воды; современный резервуар не подтверждён.'),
-        ('Разлом планеты', 'Noctis Labyrinthus', ((90,225),),
-         ('Картировать трещины', 'Измерить профиль высот'),
-         'Разломы позволяют исследовать тектонику и влияние поднятия Tharsis.'),
-        ('Невозможный маршрут', 'Canyon route', ((430,345),(390,365),(350,390)),
-         ('Проверить склон: точка 1', 'Проверить сцепление: точка 2', 'Завершить безопасный маршрут'),
-         'Рельеф и сцепление ограничивают доступные пути ровера.'),
-        ('Исследовательская станция', 'Base plateau', ((480,365),),
-         ('Развернуть станцию после доставки воды и полива',),
-         'Станция снабжена водой и пищей: прототип жизненного цикла завершён.')
+        ('The Ancient Water Mystery', 'Hebes / Candor', ((315,205),),
+         ('Collect a layered rock sample', 'Measure mineral composition'),
+         'Minerals may indicate ancient interaction with water.'),
+        ('The Great Landslide', 'Ius Chasma', ((170,295),),
+         ('Map the debris', 'Inspect exposed rock layers'),
+         'Debris and rock layers help reconstruct the landslide history.'),
+        ('The Mysterious Dark Streaks', 'Melas / Coprates', ((410,300),),
+         ('Compare seasonal images', 'Take a remote measurement'),
+         'The cause is debated: salts or dry flows are possible; liquid water is unconfirmed.'),
+        ('The Geological Archive', 'Hebes Chasma', ((255,165),),
+         ('Photograph rock layers', 'Compare the sequence of layers'),
+         'Layer order reveals the relative sequence of geological events.'),
+        ('The Lost Underground Reservoir', 'Eastern Valles', ((600,280),),
+         ('Map collapsed terrain', 'Compare channel elevations'),
+         'Ancient channels suggest water release; a present-day reservoir is unconfirmed.'),
+        ('The Planetary Fracture', 'Noctis Labyrinthus', ((90,225),),
+         ('Map the fractures', 'Measure an elevation profile'),
+         'Fractures reveal clues to tectonics and the uplift of Tharsis.'),
+        ('The Impossible Route', 'Canyon route', ((430,345),(390,365),(350,390)),
+         ('Check slope at waypoint 1', 'Check traction at waypoint 2', 'Complete the safe route'),
+         'Topography and traction constrain rover routes.'),
+        ('The Canyon Research Station', 'Base plateau', ((480,365),),
+         ('Deploy the station after delivering water and watering plants',),
+         'The station has water and food: the prototype life-support cycle is complete.')
     )
     radius = 280
 
@@ -80,28 +80,28 @@ class Missions:
         if index is None:
             return
         if index == 7 and (survival.deliveredWater < 1 or survival.wateredPlants < 1):
-            survival.notify('Станция: сначала доставьте воду и полейте растения на базе.')
+            survival.notify('Station: first deliver water and water the plants at base.')
             return
         self.progress[index] += 1
         if index == 0 and self.progress[index] == len(self.definitions[index][3]):
-            survival.notify('Образец готов. E у компьютера базы: анализ минералов.')
+            survival.notify('Sample ready. Press E at the base computer to analyse minerals.')
         elif self.done(index):
-            survival.notify(f'Миссия {index+1} завершена. ' + self.definitions[index][4])
+            survival.notify(f'Mission {index+1} complete. ' + self.definitions[index][4])
         else:
-            survival.notify(f'Миссия {index+1}: этап выполнен. Следующий этап — E.')
+            survival.notify(f'Mission {index+1}: step complete. Press E for the next step.')
 
     def analyseAtBase(self, survival, roverCoords):
         if self.progress[0] >= len(self.definitions[0][3]) and not self.analysed:
             if pg.Vector2(roverCoords).distance_to(RoverMap.baseCoords) > 650:
-                survival.notify('Сначала привезите ровер с образцом обратно к базе.')
+                survival.notify('First return the rover and its sample to base.')
                 return True
             self.analysed = True
-            survival.notify('Миссия 1: анализ завершён. ' + self.definitions[0][4])
+            survival.notify('Mission 1: analysis complete. ' + self.definitions[0][4])
             return True
         return False
 
     def renderStatus(self, screen):
-        label = self.font.render(f'Миссии: {self.completed}/8  |  M: карта и задания', True, '#ffdc8a')
+        label = self.font.render(f'Missions: {self.completed}/8  |  M: map and objectives', True, '#ffdc8a')
         screen.blit(label, (16,48))
 
     def renderList(self, screen, x, y):
@@ -110,11 +110,11 @@ class Missions:
             color = '#83d674' if done else '#ffdc8a'
             rows = [f'{i+1}. {title}', location]
             if done:
-                rows.append('Выполнено')
+                rows.append('Complete')
             elif i == 0 and self.progress[i] >= len(actions):
-                rows.append('Анализ: компьютер базы (E)')
+                rows.append('Analyse at the base computer (E)')
             else:
-                rows.append(f'Этап {self.progress[i]+1}/{len(actions)}: E у точки')
+                rows.append(f'Step {self.progress[i]+1}/{len(actions)}: E at the marker')
             for row, text in enumerate(rows):
                 screen.blit(self.font.render(text, True, color if row != 1 else '#b0bbc8'), (x,y+i*65+row*18))
 

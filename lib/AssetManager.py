@@ -30,7 +30,7 @@ class AssetManager:
             else:
                 continue
             cls.LOADED[key] = asset
-            print(f'[INFO] Загружен ресурс по ключу {key}')
+            print(f'[INFO] Loaded asset {key}')
 
     @classmethod
     def get(cls, key):

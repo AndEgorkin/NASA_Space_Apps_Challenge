@@ -68,7 +68,7 @@ class RoverMap:
         screen.blit(self.font.render('BASE', True, '#b5edff'), base + (12,-12))
         canyon = project(self.canyonPixel)
         pg.draw.circle(screen, '#68c9ed', canyon, 8)
-        waterLabel = self.font.render('Каньон с водой', True, '#a0e6ff')
+        waterLabel = self.font.render('Canyon with Water', True, '#a0e6ff')
         screen.blit(waterLabel, canyon + (10, 10))
         if missions is not None:
             for i, definition in enumerate(missions.definitions):
@@ -92,5 +92,5 @@ class RoverMap:
             tangent = (point - pg.Vector2(rect.center)).normalize().rotate(90)
             pg.draw.line(screen, '#50ff98', edge-tangent*16, edge+tangent*16, 7)
             screen.blit(self.font.render('ROVER', True, '#50ff98'), edge + (10,-25))
-        label = 'M / Esc: закрыть | Зелёный: ровер | Синий: база / вода'
+        label = 'M / Esc: close | Green: rover | Blue: base / water'
         screen.blit(self.font.render(label, True, 'white'), (24,20))
