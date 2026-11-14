@@ -1,5 +1,6 @@
 import pygame as pg
 from lib.AssetManager import AssetManager
+from lib.Texture import Texture
 
 class Main:
     pg.init()
@@ -16,20 +17,34 @@ class Main:
     isRunning = True
     @staticmethod
     def init():
+        Main.buffer.append(Texture(
+            (0,0), 10, 1, 
+            AssetManager.get('assets.texture.test'),
+            priority=0
+        ))
         while Main.isRunning:
-            Main.update(Main.buffer)
-            Main.render(Main.buffer)
+            Main.tick(Main.buffer)
 
     @staticmethod
-    def update(buffer):
-        pass
+    def tick(buffer):
+        screen = Main.SCREEN
+        mouse = pg.mouse.get_pos()
 
-    @staticmethod
-    def render(buffer):
-        Main.SCREEN.fill('#000000');
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                Main.isRunning = False
 
-        pg.display.flip();
-        Main.CLOCK.tick(60);
+        Main.buffer.sort(
+            key=lambda texture: texture.priority, reverse=True
+        )
+
+        screen.fill('#000000')
+        for texture in Main.buffer:
+            texture.update()
+            texture.render(screen)
+
+        pg.display.flip()
+        Main.CLOCK.tick(60)
 
 if __name__ == '__main__':
     Main.init() # Точка входа в программу

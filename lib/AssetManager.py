@@ -28,7 +28,8 @@ class AssetManager:
                     AssetManager.LOADED[key] = pg.image.load(path)
                 elif '\\sound\\' in str(path): # Все звуки хранятся по пути assets/sound
                     AssetManager.LOADED[key] = pg.mixer.Sound(path)
+                print(f'[INFO] Загружен ресурс по ключу {key}')
 
     @staticmethod
-    def get(self, key):
-        return self.LOADED[key]
+    def get(key):
+        return AssetManager.LOADED[key]
