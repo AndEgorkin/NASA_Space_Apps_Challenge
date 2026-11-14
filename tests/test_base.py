@@ -54,13 +54,40 @@ class BaseTests(unittest.TestCase):
         self.assertTrue(self.base.canControl())
         for _ in range(100):
             self.base.update(0.1, (-1,0))
-        self.assertGreaterEqual(round(self.base.position.x) - 3, 39)
+        self.assertGreaterEqual(round(self.base.position.x) - 5, 39)
         self.assertFalse(self.base._blocked(self.base.position))
         self.base.room = 'plants'
         self.base.position.update(70,25)
         for _ in range(100):
             self.base.update(0.1, (0,1))
         self.assertLess(self.base.position.y,38)
+
+    def testUpperWallsStopWholeBody(self):
+        for room, start in [('control', (120,75)), ('crew', (120,100))]:
+            self.base.room = room
+            self.base.position.update(start)
+            for _ in range(100):
+                self.base.update(0.1, (0,-1))
+            rect = pg.Rect(0,0,10,16)
+            rect.midbottom = (round(self.base.position.x), round(self.base.position.y)+2)
+            self.assertIsNone(self.base.wallMasks[room].overlap(self.base.playerMask, rect.topleft))
+            self.assertGreater(rect.top,0)
+            self.assertFalse(self.base.isWalking)
+
+    def testLeftControlRoomAndAnimation(self):
+        self.base.position.update(4,75)
+        self.base.update(0.1, (-1,0))
+        self.assertEqual(self.base.room, 'control')
+        self.base.position.update(100,75)
+        self.base.update(0.1, (1,0))
+        self.assertEqual(self.base.facing,2)
+        self.assertTrue(self.base.isWalking)
+        self.assertGreater(self.base.walkTime,0)
+        self.assertEqual(len(self.base.walkFrames),4)
+        self.assertTrue(all(len(row)==4 for row in self.base.walkFrames))
+        self.base.update(0.1,(0,0))
+        self.assertFalse(self.base.isWalking)
+        self.assertEqual(self.base.walkTime,0)
 
     def testInteractionAndEscape(self):
         event = lambda key: pg.event.Event(pg.KEYDOWN, key=key)

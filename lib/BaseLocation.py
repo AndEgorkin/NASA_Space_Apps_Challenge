@@ -17,10 +17,10 @@ class BaseLocation:
     }
     # Each exit specifies its destination and a safe arrival point away from the trigger.
     exits = {
-        'main': [('top', 'control', (220, 75)), ('right', 'corridor', (12, 75))],
+        'main': [('left', 'control', (220, 75)), ('right', 'corridor', (12, 75))],
         'corridor': [('left', 'main', (228, 75)), ('top', 'crew', (120, 128)),
                      ('bottom', 'plants', (120, 15))],
-        'control': [('right', 'main', (120, 12))],
+        'control': [('right', 'main', (12, 75))],
         'crew': [('bottom', 'corridor', (120, 12))],
         'plants': [('top', 'corridor', (120, 128))]
     }
@@ -40,16 +40,29 @@ class BaseLocation:
                         mask.set_at((x, y))
             self.wallMasks[name] = mask
         self.objects = {
-            'main': [pg.Rect(0, 24, 3, 90), pg.Rect(50, 137, 139, 3)],
+            'main': [pg.Rect(50, 0, 139, 3), pg.Rect(50, 137, 139, 3)],
             'corridor': [],
             'control': [pg.Rect(11, 33, 28, 72)],
             'crew': [pg.Rect(62, 34, 120, 30)],
             'plants': [pg.Rect(27, 38, 91, 91), pg.Rect(120, 38, 91, 91)]
         }
-        # The temporary portrait is displayed with its original proportions.
-        portrait = pg.image.load(str(root / 'player' / 'Player.png')).convert_alpha()
-        self.playerImage = pg.transform.smoothscale(portrait, (8, 20))
-        self.playerMask = pg.mask.Mask((6, 5), fill=True)
+        sheet = pg.image.load(str(root / 'player' / 'astronaut-walk.png')).convert_alpha()
+        cellWidth, cellHeight = sheet.get_width() // 4, sheet.get_height() // 4
+        self.walkFrames = []
+        for row in range(4):
+            frames = []
+            for column in range(4):
+                cell = sheet.subsurface((column * cellWidth, row * cellHeight,
+                                         cellWidth, cellHeight))
+                # Common crop preserves the walk cycle's alignment within every cell.
+                crop = cell.subsurface((round(cellWidth * 0.2), round(cellHeight * 0.16),
+                                        round(cellWidth * 0.6), round(cellHeight * 0.74)))
+                frames.append(pg.transform.smoothscale(crop, (12, 16)))
+            self.walkFrames.append(frames)
+        self.facing = 0
+        self.walkTime = 0.0
+        self.isWalking = False
+        self.playerMask = pg.mask.Mask((10, 16), fill=True)
         self.position = pg.Vector2(120, 75)
         self.room = 'main'
         self.font = pg.font.Font(None, 25)
@@ -70,8 +83,9 @@ class BaseLocation:
         return None
 
     def _blocked(self, position):
-        rect = pg.Rect(0, 0, 6, 5)
-        rect.center = (round(position.x), round(position.y))
+        # Collide with the entire visible body, including the head at upper walls.
+        rect = pg.Rect(0, 0, 10, 16)
+        rect.midbottom = (round(position.x), round(position.y) + 2)
         return (self.wallMasks[self.room].overlap(self.playerMask, rect.topleft) is not None
                 or any(rect.colliderect(obj) for obj in self.objects[self.room]))
 
@@ -80,7 +94,13 @@ class BaseLocation:
             keys = pg.key.get_pressed()
             direction = (int(keys[pg.K_d] or keys[pg.K_RIGHT]) - int(keys[pg.K_a] or keys[pg.K_LEFT]),
                          int(keys[pg.K_s] or keys[pg.K_DOWN]) - int(keys[pg.K_w] or keys[pg.K_UP]))
+        previousPosition = self.position.copy()
         movement = pg.Vector2(direction)
+        if movement.length_squared():
+            if abs(movement.x) > abs(movement.y):
+                self.facing = 2 if movement.x > 0 else 1
+            else:
+                self.facing = 0 if movement.y > 0 else 3
         if movement.length_squared():
             movement = movement.normalize() * 42 * min(max(deltaTime, 0), 0.1)
         # Small steps prevent crossing even a one-pixel wall at low frame rates.
@@ -92,9 +112,14 @@ class BaseLocation:
                 if not self._blocked(candidate):
                     self.position = candidate
             if self._transition():
+                self.isWalking = False
+                self.walkTime = 0.0
                 return
             self.position.x = max(3, min(237, self.position.x))
             self.position.y = max(3, min(137, self.position.y))
+
+        self.isWalking = self.position.distance_squared_to(previousPosition) > 0.0001
+        self.walkTime = self.walkTime + min(max(deltaTime, 0), 0.1) if self.isWalking else 0.0
 
     def _transition(self):
         x, y = self.position
@@ -126,7 +151,9 @@ class BaseLocation:
                 pg.draw.rect(self.screen, '#596473',
                              (offset[0] + barrier.x * scale, offset[1] + barrier.y * scale,
                               max(2, barrier.w * scale), max(2, barrier.h * scale)))
-        image = pg.transform.scale(self.playerImage, (round(8 * scale), round(20 * scale)))
+        frame = int(self.walkTime * 8) % 4 if self.isWalking else 0
+        image = pg.transform.scale(self.walkFrames[self.facing][frame],
+                                   (round(12 * scale), round(16 * scale)))
         feet = (round(offset[0] + self.position.x * scale),
                 round(offset[1] + (self.position.y + 2) * scale))
         self.screen.blit(image, image.get_rect(midbottom=feet))
