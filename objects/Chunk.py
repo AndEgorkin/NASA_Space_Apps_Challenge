@@ -1,12 +1,12 @@
 import math
 from functools import lru_cache
 import pygame as pg
-from lib.Texture import Texture
+from objects.Texture import Texture
 
 class Chunk(Texture):
-    CRATER_CELL_SIZE = 650.0
+    craterCellSize = 650.0
 
-    PALETTE = [
+    palette = [
         (65, 22, 14),
         (85, 30, 18),
         (110, 42, 24),
@@ -21,7 +21,7 @@ class Chunk(Texture):
         self.chunkX = chunkX
         self.chunkY = chunkY
         self.chunkSize = chunkSize
-        
+
         worldX = chunkX * chunkSize
         worldY = chunkY * chunkSize
         if surface is None:
@@ -51,7 +51,7 @@ class Chunk(Texture):
     @staticmethod
     @lru_cache(maxsize=4096)
     def _craterCell(cellX, cellY):
-        cellSize = Chunk.CRATER_CELL_SIZE
+        cellSize = Chunk.craterCellSize
         if Chunk._hash2(cellX + 193, cellY - 71) < 0.18:
             return None
 
@@ -91,7 +91,7 @@ class Chunk(Texture):
 
     @staticmethod
     def _craterHeight(worldX, worldY, edgeNoise):
-        cellSize = Chunk.CRATER_CELL_SIZE
+        cellSize = Chunk.craterCellSize
         cellX = math.floor(worldX / cellSize)
         cellY = math.floor(worldY / cellSize)
         height = 0.0
@@ -147,7 +147,7 @@ class Chunk(Texture):
     def terrainColorIndexFromHeight(height):
         val = (height - 0.2) * 0.75 + 0.5
         val = max(0.0, min(0.999, val))
-        return int(val * len(Chunk.PALETTE))
+        return int(val * len(Chunk.palette))
 
     @staticmethod
     def generateSurface(chunkX, chunkY, chunkSize):
@@ -161,8 +161,8 @@ class Chunk(Texture):
         chunkStartX = chunkCenterX - chunkSize / 2
         chunkTopY = chunkCenterY + chunkSize / 2
 
-        numColors = len(Chunk.PALETTE)
-        
+        numColors = len(Chunk.palette)
+
         for ly in range(lowResSize):
             worldY = chunkTopY - (ly + 0.5) * pixelStep
             for lx in range(lowResSize):
@@ -173,7 +173,7 @@ class Chunk(Texture):
                 val = max(0.0, min(0.999, val))
 
                 colorIdx = int(val * numColors)
-                pixelArray[lx, ly] = Chunk.PALETTE[colorIdx]
+                pixelArray[lx, ly] = Chunk.palette[colorIdx]
 
         del pixelArray
         return pg.transform.scale(lowSurface, (chunkSize, chunkSize))

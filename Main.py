@@ -1,71 +1,77 @@
 import pygame as pg
 
 from lib.AssetManager import AssetManager
-from lib.Texture import Texture
 from lib.Camera import Camera
+from lib.EnvironmentManager import EnvironmentManager
 from lib.TerrainManager import TerrainManager
-from Rover import Rover
+from objects.Rover import Rover
 
 class Main:
-    pg.init()
-    pg.mixer.init()
-    AssetManager.init()
-    
-    SCREEN = pg.display.set_mode((1200, 830))
-    CLOCK = pg.time.Clock()
-    pg.display.set_caption('NASA Competition Program')
-
+    screen = None
+    clock = None
     buffer = []
-    scheduler = []
     camera = None
     rover = None
-    terrainManager = None
-    
     isRunning = True
 
-    @staticmethod
-    def init():
-        Main.rover = Rover()
-        Main.camera = Camera(Main.rover.coords)
-        Main.terrainManager = TerrainManager(chunkSize=1200)
+    @classmethod
+    def run(cls):
+        pg.init()
+        pg.mixer.init()
+        AssetManager.init()
 
-        Main.buffer.append(Main.rover)
-        Main.terrainManager.init(Main.rover.coords, Main.buffer)
+        cls.screen = pg.display.set_mode((1200, 830))
+        cls.clock = pg.time.Clock()
+        cls.buffer = []
+        cls.camera = None
+        cls.rover = None
+        cls.isRunning = True
+        pg.display.set_caption('NASA Competition Program')
 
-        while Main.isRunning:
-            Main.tick(Main.buffer)
+        cls.rover = Rover()
+        cls.camera = Camera(cls.rover.coords)
+        EnvironmentManager.dustTexture = AssetManager.get('assets.texture.dust')
+        cls.buffer.append(cls.rover)
 
-    @staticmethod
-    def tick(buffer):
-        deltaTime = min(Main.CLOCK.get_time() / 1000.0, 1.0 / 30.0)
-        screen = Main.SCREEN
-        mouse = pg.mouse.get_pos()
+        try:
+            TerrainManager.loadInitialChunks(cls.rover.coords, cls.buffer)
+            while cls.isRunning:
+                cls.tick()
+        finally:
+            pg.quit()
+
+    @classmethod
+    def tick(cls):
+        deltaTime = min(cls.clock.get_time() / 1000.0, 1.0 / 30.0)
 
         for event in pg.event.get():
             if event.type == pg.QUIT:
-                Main.isRunning = False
+                cls.isRunning = False
 
-        if Main.terrainManager and Main.rover:
-            Main.terrainManager.update(Main.rover.coords, Main.buffer)
+        TerrainManager.update(cls.rover.coords, cls.buffer)
+        screenSize = cls.screen.get_size()
+        EnvironmentManager.update(deltaTime, screenSize)
+        EnvironmentManager.applyWeather(cls.rover, deltaTime)
 
-        Main.buffer.sort(
-            key=lambda texture: texture.priority
-        )
+        cls.buffer.sort(key=lambda texture: texture.priority)
 
-        screen.fill('#000000')
-        for texture in Main.buffer:
+        cls.screen.fill('#000000')
+        for texture in cls.buffer:
             texture.update(deltaTime)
 
-        if Main.camera and Main.rover:
-            Main.camera.follow(Main.rover.coords)
+        cls.camera.follow(cls.rover.coords)
+        cameraOffset = EnvironmentManager.getCameraOffset(
+            cls.camera.coords,
+            screenSize
+        )
 
-        cameraOffset = Main.camera.coords if Main.camera else (0.0, 0.0)
+        for texture in cls.buffer:
+            texture.render(cls.screen, cameraOffset)
 
-        for texture in Main.buffer:
-            texture.render(screen, cameraOffset)
+        EnvironmentManager.render(cls.screen)
 
         pg.display.flip()
-        Main.CLOCK.tick(60)
+        cls.clock.tick(60)
 
 if __name__ == '__main__':
-    Main.init()
+    Main.run()

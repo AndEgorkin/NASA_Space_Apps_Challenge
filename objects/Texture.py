@@ -1,12 +1,12 @@
 import pygame as pg
 
 class Texture:
-    IDS = []
-    
+    ids = []
+
     def __init__(self, id, coords, rotation, scale, texture, priority=0):
-        if id in Texture.IDS:
+        if id in Texture.ids:
             raise Exception('[ERROR] Идентификатор текстуры должен быть уникальным')
-        Texture.IDS.append(id)
+        Texture.ids.append(id)
         self.id = id
         self.coords = list(coords)
         self.rotation = rotation
@@ -17,13 +17,18 @@ class Texture:
         self._cachedScaledTexture = None
 
     def destroy(self):
-        if self.id in Texture.IDS:
-            Texture.IDS.remove(self.id)
+        if self.id in Texture.ids:
+            Texture.ids.remove(self.id)
+
+    @staticmethod
+    def getScaleFactor(screenSize):
+        screenWidth, screenHeight = screenSize
+        return min(screenWidth / 1920, screenHeight / 1080)
 
     @staticmethod
     def screenToWorld(screenCoords, screenSize, offset=(0.0, 0.0)):
         screenWidth, screenHeight = screenSize
-        factor = min(screenWidth / 1920, screenHeight / 1080)
+        factor = Texture.getScaleFactor(screenSize)
         worldX = (screenCoords[0] - screenWidth / 2) / factor + offset[0]
         worldY = (screenHeight / 2 - screenCoords[1]) / factor + offset[1]
         return worldX, worldY
@@ -31,7 +36,7 @@ class Texture:
     @staticmethod
     def worldToScreen(worldCoords, screenSize, offset=(0.0, 0.0)):
         screenWidth, screenHeight = screenSize
-        factor = min(screenWidth / 1920, screenHeight / 1080)
+        factor = Texture.getScaleFactor(screenSize)
         screenX = screenWidth / 2 + (worldCoords[0] - offset[0]) * factor
         screenY = screenHeight / 2 - (worldCoords[1] - offset[1]) * factor
         return screenX, screenY
@@ -42,7 +47,7 @@ class Texture:
     def render(self, screen, offset=(0.0, 0.0)):
         screenSize = screen.get_size()
         x, y = Texture.worldToScreen(self.coords, screenSize, offset)
-        factor = min(screenSize[0] / 1920, screenSize[1] / 1080)
+        factor = Texture.getScaleFactor(screenSize)
 
         if self.rotation == 0.0:
             if self._cachedFactor != factor or self._cachedScaledTexture is None:

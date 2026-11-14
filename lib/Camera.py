@@ -6,6 +6,3 @@ class Camera:
     def follow(self, targetCoords):
         self.coords[0] += (targetCoords[0] - self.coords[0]) * self.smoothness
         self.coords[1] += (targetCoords[1] - self.coords[1]) * self.smoothness
-
-    def setCoords(self, coords):
-        self.coords = list(coords)
