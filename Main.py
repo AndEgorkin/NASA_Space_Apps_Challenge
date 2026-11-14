@@ -2,6 +2,7 @@ import pygame as pg
 
 from lib.AssetManager import AssetManager
 from lib.Camera import Camera
+from lib.MainMenu import MainMenu
 from lib.EnvironmentManager import EnvironmentManager
 from lib.TerrainManager import TerrainManager
 from objects.Rover import Rover
@@ -27,6 +28,10 @@ class Main:
         cls.rover = None
         cls.isRunning = True
         pg.display.set_caption('NASA Competition Program')
+
+        if not MainMenu(cls.screen).run():
+            pg.quit()
+            return
 
         cls.rover = Rover()
         cls.camera = Camera(cls.rover.coords)
