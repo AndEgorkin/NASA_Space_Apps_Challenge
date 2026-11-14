@@ -309,10 +309,15 @@ class Rover(Texture):
             0.35,
             1.0 - roughness * 0.55 - bump * 0.15 - self.uphillLoad * 0.2
         )
-        if throttle != 0.0 and self.velocity * throttle < 0.0:
-            self._applyDeceleration(self.braking * driveGrip * deltaTime)
-        elif throttle != 0.0:
-            self.velocity += throttle * self.acceleration * driveGrip * deltaTime
+        if throttle != 0.0:
+            driveTime = deltaTime
+            if self.velocity * throttle < 0.0:
+                # Use the rest of this frame for acceleration after coming to a stop.
+                # Tiny downhill drift must not consume every frame's throttle input.
+                stopTime = abs(self.velocity) / (self.braking * driveGrip)
+                self._applyDeceleration(self.braking * driveGrip * deltaTime)
+                driveTime = max(0.0, deltaTime - stopTime)
+            self.velocity += throttle * self.acceleration * driveGrip * driveTime
         else:
             resistance = (
                 self.rollingResistance

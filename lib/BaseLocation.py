@@ -57,8 +57,9 @@ class BaseLocation:
                 # Common crop preserves the walk cycle's alignment within every cell.
                 crop = cell.subsurface((round(cellWidth * 0.2), round(cellHeight * 0.16),
                                         round(cellWidth * 0.6), round(cellHeight * 0.74)))
-                frames.append(pg.transform.smoothscale(crop, (12, 16)))
+                frames.append(crop.copy())
             self.walkFrames.append(frames)
+        self._scaledFrames = {}
         self.facing = 0
         self.walkTime = 0.0
         self.isWalking = False
@@ -152,8 +153,13 @@ class BaseLocation:
                              (offset[0] + barrier.x * scale, offset[1] + barrier.y * scale,
                               max(2, barrier.w * scale), max(2, barrier.h * scale)))
         frame = int(self.walkTime * 8) % 4 if self.isWalking else 0
-        image = pg.transform.scale(self.walkFrames[self.facing][frame],
-                                   (round(12 * scale), round(16 * scale)))
+        spriteSize = (round(12 * scale), round(16 * scale))
+        if spriteSize not in self._scaledFrames:
+            self._scaledFrames = {spriteSize: [
+                [pg.transform.smoothscale(source, spriteSize) for source in row]
+                for row in self.walkFrames
+            ]}
+        image = self._scaledFrames[spriteSize][self.facing][frame]
         feet = (round(offset[0] + self.position.x * scale),
                 round(offset[1] + (self.position.y + 2) * scale))
         self.screen.blit(image, image.get_rect(midbottom=feet))
