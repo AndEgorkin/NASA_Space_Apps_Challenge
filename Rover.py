@@ -10,10 +10,15 @@ class Rover(Texture):
             'rover.base', 
             [0.0, 0.0], 
             0.0, 
-            5, 
+            6, 
             AssetManager.get('assets.texture.rover.base'),
             100
         )
+        self.wheelsTexture = AssetManager.get('assets.texture.rover.wheels')
+        self._cachedWheelsFactor = None
+        self._cachedScaledWheels = None
+        self.wheelSteeringAngle = 0.0
+        self.wheelSteeringWobbleAngle = 0.0
         self.velocity = 0.0
         self.lateralVelocity = 0.0
         self.maxSpeed = 180.0
@@ -136,6 +141,12 @@ class Rover(Texture):
         steeringAngle = math.radians(
             self.maxSteeringAngle * steer + steeringWobble * wobbleAmplitude
         )
+        wheelSteeringTarget = 12.0 * steer
+        steeringBlend = 1.0 - math.exp(-9.0 * deltaTime)
+        self.wheelSteeringAngle += (
+            wheelSteeringTarget - self.wheelSteeringAngle
+        ) * steeringBlend
+        self.wheelSteeringWobbleAngle = steeringWobble * wobbleAmplitude
         turnGrip = max(0.25, 1.0 - roughness * 0.65)
         yawRate = (
             self.velocity / self.wheelbase
@@ -161,4 +172,31 @@ class Rover(Texture):
         self.coords[1] += (forwardY * self.velocity + rightY * self.lateralVelocity) * deltaTime
 
     def render(self, screen, offset=(0.0, 0.0)):
+        screenSize = screen.get_size()
+        center = Texture.worldToScreen(self.coords, screenSize, offset)
+        factor = min(screenSize[0] / 1920, screenSize[1] / 1080)
+
+        if (
+            self._cachedWheelsFactor != factor
+            or self._cachedScaledWheels is None
+        ):
+            self._cachedWheelsFactor = factor
+            self._cachedScaledWheels = pg.transform.scale_by(
+                self.wheelsTexture,
+                self.scale * factor
+            )
+
+        wheels = pg.transform.rotate(
+            self._cachedScaledWheels,
+            self.rotation
+            + self.wheelSteeringAngle
+            + self.wheelSteeringWobbleAngle
+        )
+        heading = math.radians(self.rotation)
+        wheelOffset = 6.0 * self.scale * factor
+        wheelCenter = (
+            center[0] - math.sin(heading) * wheelOffset,
+            center[1] - math.cos(heading) * wheelOffset
+        )
+        screen.blit(wheels, wheels.get_rect(center=wheelCenter))
         super().render(screen, offset)
