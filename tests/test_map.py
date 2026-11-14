@@ -22,6 +22,16 @@ class MapTests(unittest.TestCase):
             self.assertTrue(rect.collidepoint(edge))
             self.assertTrue(min(abs(edge.x-12),abs(edge.x-756),abs(edge.y-12),abs(edge.y-546))<0.01)
 
+    def testHeadingMatchesProjectedRoverForward(self):
+        from objects.Rover import Rover
+        rover = Rover.__new__(Rover)
+        for rotation in (0, 45, 90, 135, 180, -90, 270, 360):
+            rover.rotation = rotation
+            forwardX, forwardY, _, _ = rover._getDirectionAxes()
+            origin = RoverMap.worldToMap((0, 0))
+            projected = RoverMap.worldToMap((forwardX * 100, forwardY * 100)) - origin
+            self.assertLess(projected.normalize().distance_to(RoverMap.headingOnMap(rotation)), 0.00001)
+
     def testPersistenceAndBadSave(self):
         original=RoverSave.path
         with tempfile.TemporaryDirectory() as folder:

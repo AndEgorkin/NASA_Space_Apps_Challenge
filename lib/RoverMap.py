@@ -29,6 +29,12 @@ class RoverMap:
                 (cls.basePixel.y - coords[1]) * cls.unitsPerPixel)
 
     @staticmethod
+    def headingOnMap(rotation):
+        # Rover forward is (-sin(angle), cos(angle)) in world coordinates.
+        # The map reverses Y, so zero heading points up and turns reverse sign.
+        return pg.Vector2(0, -1).rotate(-rotation)
+
+    @staticmethod
     def edgePosition(point, rect):
         # Intersect the ray from the map center with its inset border.
         inner = rect.inflate(-24, -24)
@@ -66,8 +72,7 @@ class RoverMap:
         screen.blit(question, question.get_rect(center=canyon))
         point = project(self.worldToMap(rover.coords))
         if rect.collidepoint(point):
-            # Rotation follows the rover's existing world heading (zero points south).
-            forward = pg.Vector2(0, 1).rotate(rover.rotation)
+            forward = self.headingOnMap(rover.rotation)
             side = forward.rotate(90)
             pg.draw.polygon(screen, '#50ff98', [point+forward*12,point-forward*8+side*7,point-forward*8-side*7])
             pg.draw.circle(screen, '#102d22', point, 3)
@@ -78,7 +83,3 @@ class RoverMap:
             screen.blit(self.font.render('ROVER', True, '#50ff98'), edge + (10,-25))
         label = 'M / Esc: close   |   Green: rover   Blue: base   ?: canyon'
         screen.blit(self.font.render(label, True, 'white'), (24,20))
-        # Scale bar shares the exact projection used by all markers.
-        length = 1000 / self.unitsPerPixel * size[0] / self.imageSize[0]
-        pg.draw.line(screen, 'white', (rect.left+20,rect.bottom-22), (rect.left+20+length,rect.bottom-22),3)
-        screen.blit(self.font.render('1000 world units',True,'white'),(rect.left+20,rect.bottom-50))
