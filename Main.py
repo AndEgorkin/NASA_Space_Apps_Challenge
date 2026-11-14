@@ -10,6 +10,8 @@ from objects.Rover import Rover
 from objects.Texture import Texture
 from lib.RoverMap import RoverMap
 from lib.RoverSave import RoverSave
+from lib.Survival import Survival
+from objects.WaterWell import WaterWell
 
 class Main:
     screen = None
@@ -37,14 +39,25 @@ class Main:
         cls.roverMap = RoverMap()
         cls.mapOpen = False
         cls.saveElapsed = 0.0
+        cls.survival = Survival()
+        cls.survivalTicks = pg.time.get_ticks()
         cls.scene = 'menu'
         try:
             while cls.isRunning:
+                if cls.scene != 'menu':
+                    now = pg.time.get_ticks()
+                    cls.survival.update((now - cls.survivalTicks) / 1000.0)
+                    cls.survivalTicks = now
+                    if cls.survival.depleted:
+                        cls.scene = 'depleted'
                 if cls.scene == 'menu':
                     if not MainMenu(cls.screen).run():
                         break
                     cls.scene = 'base'
+                    cls.survivalTicks = pg.time.get_ticks()
                     cls.clock.tick()
+                elif cls.scene == 'depleted':
+                    cls.showDepleted()
                 elif cls.scene == 'base':
                     deltaTime = cls.clock.tick(60) / 1000.0
                     for event in pg.event.get():
@@ -55,12 +68,16 @@ class Main:
                         if action == 'menu':
                             cls.scene = 'menu'
                             break
+                        if action == 'water':
+                            cls.survival.waterPlants()
                         if action == 'rover':
                             cls.startRover()
                             break
                     if cls.isRunning and cls.scene == 'base':
                         cls.base.update(deltaTime)
                         cls.base.render()
+                        hint = 'E: water plants (+food)' if cls.base.canWaterPlants() else ''
+                        cls.survival.render(cls.screen, hint)
                         pg.display.flip()
                 else:
                     cls.tick()
@@ -69,9 +86,27 @@ class Main:
             pg.quit()
 
     @classmethod
+    def showDepleted(cls):
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                cls.isRunning = False
+            elif event.type == pg.KEYDOWN and event.key == pg.K_RETURN:
+                cls.survival = Survival()
+                cls.base = BaseLocation(cls.screen)
+                cls.scene = 'base'
+                cls.survivalTicks = pg.time.get_ticks()
+        cls.screen.fill('#101823')
+        reason = 'Oxygen depleted' if cls.survival.oxygen <= 0 else 'Food depleted'
+        label = pg.font.Font(None, 40).render(reason + ' - Enter: retry', True, 'white')
+        cls.screen.blit(label, label.get_rect(center=cls.screen.get_rect().center))
+        pg.display.flip()
+        cls.clock.tick(60)
+
+    @classmethod
     def startRover(cls):
         if cls.rover is None:
             cls.rover = Rover()
+            cls.buffer.append(WaterWell())
             RoverSave.load(cls.rover, RoverMap.spawnCoords)
             cls.buffer.append(Texture('base.exterior', RoverMap.baseCoords, 0, 0.6,
                                       AssetManager.get('assets.texture.base-exterior'), 50))
@@ -101,9 +136,12 @@ class Main:
                 return
             if event.type == pg.KEYDOWN and event.key == pg.K_m:
                 cls.mapOpen = not cls.mapOpen
+            if event.type == pg.KEYDOWN and event.key == pg.K_e and not cls.mapOpen:
+                cls.survival.roverAction(cls.rover.coords)
 
         if cls.mapOpen:
             cls.roverMap.render(cls.screen, cls.rover)
+            cls.survival.render(cls.screen)
             pg.display.flip()
             cls.clock.tick(60)
             return
@@ -135,6 +173,7 @@ class Main:
         hint = pg.font.Font(None, 24).render('M: map  |  Esc: base', True, 'white')
         cls.screen.blit(hint, (16, 16))
 
+        cls.survival.render(cls.screen, cls.survival.roverHint(cls.rover.coords))
         pg.display.flip()
         cls.clock.tick(60)
 

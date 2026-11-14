@@ -91,6 +91,15 @@ class BaseTests(unittest.TestCase):
         self.assertFalse(self.base.isWalking)
         self.assertEqual(self.base.walkTime,0)
 
+    def testWateringOnlyNearPlanters(self):
+        self.base.room = 'plants'
+        self.base.position.update(70,25)
+        self.assertFalse(self.base._blocked(self.base.position))
+        self.assertTrue(self.base.canWaterPlants())
+        self.assertEqual(self.base.handleEvent(pg.event.Event(pg.KEYDOWN,key=pg.K_e)), 'water')
+        self.base.room = 'main'
+        self.assertFalse(self.base.canWaterPlants())
+
     def testInteractionAndEscape(self):
         event = lambda key: pg.event.Event(pg.KEYDOWN, key=key)
         self.assertIsNone(self.base.handleEvent(event(pg.K_e)))

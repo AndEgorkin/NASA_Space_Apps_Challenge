@@ -72,6 +72,9 @@ class BaseLocation:
     def canControl(self):
         return self.room == 'control' and pg.Rect(39, 29, 16, 80).collidepoint(self.position)
 
+    def canWaterPlants(self):
+        return self.room == 'plants' and 24 <= self.position.x <= 214 and 18 <= self.position.y <= 37
+
     def handleEvent(self, event):
         if event.type == pg.QUIT:
             return 'quit'
@@ -80,6 +83,8 @@ class BaseLocation:
                 return 'menu'
             if event.key == pg.K_e and self.canControl():
                 return 'rover'
+            if event.key == pg.K_e and self.canWaterPlants():
+                return 'water'
         return None
 
     def _blocked(self, position):
