@@ -19,11 +19,7 @@ class AssetManager:
             if path.is_dir():
                 AssetManager.init(path)
             else:
-                key = 'assets.' + (
-                    str(path.relative_to(AssetManager.BASE))
-                    .replace('\\', '.')
-                    [:-len(path.suffix)]
-                )
+                key = 'assets.' + '.'.join(path.relative_to(AssetManager.BASE).with_suffix('').parts)
                 if '\\texture\\' in str(path): # Все текстуры хранятся по пути assets/texture
                     AssetManager.LOADED[key] = pg.image.load(path)
                 elif '\\sound\\' in str(path): # Все звуки хранятся по пути assets/sound
