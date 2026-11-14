@@ -28,7 +28,7 @@ class Main:
         Main.SCREEN.fill('#000000');
 
         pg.display.flip();
-        Main.COC.tick(60);
+        Main.CLOCK.tick(60);
 
 if __name__ == '__main__':
     Main.init() # Точка входа в программу
