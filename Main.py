@@ -1,6 +1,7 @@
 import pygame as pg
 
 from lib.AssetManager import AssetManager
+from lib.BaseLocation import BaseLocation
 from lib.Camera import Camera
 from lib.MainMenu import MainMenu
 from lib.EnvironmentManager import EnvironmentManager
@@ -29,21 +30,47 @@ class Main:
         cls.isRunning = True
         pg.display.set_caption('NASA Competition Program')
 
-        if not MainMenu(cls.screen).run():
-            pg.quit()
-            return
-
-        cls.rover = Rover()
-        cls.camera = Camera(cls.rover.coords)
-        EnvironmentManager.dustTexture = AssetManager.get('assets.texture.dust')
-        cls.buffer.append(cls.rover)
-
+        cls.base = BaseLocation(cls.screen)
+        cls.scene = 'menu'
         try:
-            TerrainManager.loadInitialChunks(cls.rover.coords, cls.buffer)
             while cls.isRunning:
-                cls.tick()
+                if cls.scene == 'menu':
+                    if not MainMenu(cls.screen).run():
+                        break
+                    cls.scene = 'base'
+                    cls.clock.tick()
+                elif cls.scene == 'base':
+                    deltaTime = cls.clock.tick(60) / 1000.0
+                    for event in pg.event.get():
+                        action = cls.base.handleEvent(event)
+                        if action == 'quit':
+                            cls.isRunning = False
+                            break
+                        if action == 'menu':
+                            cls.scene = 'menu'
+                            break
+                        if action == 'rover':
+                            cls.startRover()
+                            break
+                    if cls.isRunning and cls.scene == 'base':
+                        cls.base.update(deltaTime)
+                        cls.base.render()
+                        pg.display.flip()
+                else:
+                    cls.tick()
         finally:
             pg.quit()
+
+    @classmethod
+    def startRover(cls):
+        if cls.rover is None:
+            cls.rover = Rover()
+            cls.camera = Camera(cls.rover.coords)
+            EnvironmentManager.dustTexture = AssetManager.get('assets.texture.dust')
+            cls.buffer.append(cls.rover)
+            TerrainManager.loadInitialChunks(cls.rover.coords, cls.buffer)
+        cls.scene = 'rover'
+        cls.clock.tick()
 
     @classmethod
     def tick(cls):
@@ -52,6 +79,10 @@ class Main:
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 cls.isRunning = False
+                return
+            if event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE:
+                cls.scene = 'base'
+                return
 
         TerrainManager.update(cls.rover.coords, cls.buffer)
         screenSize = cls.screen.get_size()
