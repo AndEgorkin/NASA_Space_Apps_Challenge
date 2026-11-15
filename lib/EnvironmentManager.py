@@ -4,24 +4,55 @@ import pygame as pg
 from objects.Texture import Texture
 
 class EnvironmentManager:
-    dayNightDuration = 60.0
-    dayNightTransitionDuration = 6.0
+    solDuration = 180.0
+    clockUpdateInterval = 2.0
+    hourlySurfaceTemperaturesC = (
+        -70.0, -74.0, -77.0, -79.0, -80.0, -80.0,
+        -80.0, -74.0, -63.0, -53.0, -43.0, -36.0,
+        -30.0, -26.0, -23.0, -24.0, -26.0, -32.0,
+        -38.0, -47.0, -55.0, -60.0, -64.0, -67.0
+    )
+    stormDayCoolingC = 12.0
+    stormNightWarmingC = 15.0
     stormCheckInterval = 30.0
     stormDuration = 30.0
-    stormTransitionDuration = 5.0
-    stormChance = 0.3
+    stormTransitionDuration = 15.0
+    stormChance = 0.2
+    sandstormOnStart = False
+    solarFlareCheckInterval = 45.0
+    solarFlareChance = 0.25
+    solarFlarePixelCount = 1200
+    solarFlareInitialPixelCount = 4
+    solarFlareRampDuration = 8.0
+    solarFlareRecoveryDuration = 4.0
+    solarFlareOnStart = False
     dustParticleCount = 24
     windAcceleration = 90.0
     nightAlpha = 155
     dayAlpha = 18
     vignetteAlpha = 55
     angleSteps = 12
+    startingLocalTimeHour = 12.0
     isDay = True
-    dayNightTimer = 0.0
+    dayNightTimer = (
+        (startingLocalTimeHour - 12.0) / 24.0 * solDuration
+    )
+    localTimeHour = startingLocalTimeHour
+    displayedLocalTimeHour = startingLocalTimeHour
+    clockUpdateTimer = 0.0
+    nightBlend = 0.0
+    surfaceTemperatureC = hourlySurfaceTemperaturesC[12]
     elapsedTime = 0.0
     stormCheckTimer = 0.0
     stormTimeRemaining = 0.0
     stormIntensity = 0.0
+    solarFlareCheckTimer = 0.0
+    solarFlareActive = False
+    solarFlarePixels = []
+    solarFlareElapsed = 0.0
+    solarFlareRecoveryActive = False
+    solarFlareRecoveryElapsed = 0.0
+    solarFlareRecoveryStartCount = 0
     sandstormEnabled = False
     dustTexture = None
     dustParticles = []
@@ -35,14 +66,40 @@ class EnvironmentManager:
     cameraShake = (0.0, 0.0)
 
     @classmethod
-    def update(cls, deltaTime, screenSize):
+    def _createSolarFlarePixel(cls, screenSize):
+        screenWidth, screenHeight = screenSize
+        return {
+            'x': random.randrange(screenWidth),
+            'y': random.randrange(screenHeight),
+            'size': random.choice((1, 2, 3))
+        }
+
+    @classmethod
+    def _startSolarFlare(cls, screenSize):
+        cls.solarFlareActive = True
+        cls.solarFlareElapsed = 0.0
+        cls.solarFlareRecoveryActive = False
+        cls.solarFlareRecoveryElapsed = 0.0
+        cls.solarFlareRecoveryStartCount = 0
+        cls.solarFlarePixels = [
+            cls._createSolarFlarePixel(screenSize)
+            for _ in range(cls.solarFlareInitialPixelCount)
+        ]
+
+    @classmethod
+    def update(cls, deltaTime, screenSize, rover):
         deltaTime = max(0.0, deltaTime)
         cls.elapsedTime += deltaTime
-        cls.dayNightTimer += deltaTime
-
-        if cls.dayNightTimer >= cls.dayNightDuration:
-            cls.dayNightTimer %= cls.dayNightDuration
-            cls.isDay = not cls.isDay
+        cls.dayNightTimer = (cls.dayNightTimer + deltaTime) % cls.solDuration
+        cls.localTimeHour = (
+            12.0 + cls.dayNightTimer / cls.solDuration * 24.0
+        ) % 24.0
+        cls.clockUpdateTimer += deltaTime
+        if cls.clockUpdateTimer >= cls.clockUpdateInterval:
+            cls.clockUpdateTimer %= cls.clockUpdateInterval
+            cls.displayedLocalTimeHour = cls.localTimeHour
+        cls.nightBlend = cls._getNightBlend()
+        cls.isDay = cls.nightBlend < 0.5
 
         cls.stormCheckTimer += deltaTime
         if cls.sandstormEnabled:
@@ -59,7 +116,88 @@ class EnvironmentManager:
                 cls.stormTimeRemaining = cls.stormDuration
                 cls.stormIntensity = 0.0
 
+        if cls.sandstormOnStart:
+            cls.sandstormOnStart = False
+            cls.sandstormEnabled = True
+            cls.stormTimeRemaining = cls.stormDuration
+            cls.stormIntensity = 0.0
+            cls.stormCheckTimer = 0.0
+
         screenWidth, screenHeight = screenSize
+        if not cls.solarFlareActive and cls.isDay:
+            if cls.solarFlareOnStart:
+                cls.solarFlareOnStart = False
+                cls._startSolarFlare(screenSize)
+            else:
+                cls.solarFlareCheckTimer += deltaTime
+                if cls.solarFlareCheckTimer >= cls.solarFlareCheckInterval:
+                    cls.solarFlareCheckTimer %= cls.solarFlareCheckInterval
+                    if random.random() < cls.solarFlareChance:
+                        cls._startSolarFlare(screenSize)
+
+        if cls.solarFlareActive:
+            if rover.systemsOn:
+                if cls.solarFlareRecoveryActive:
+                    cls.solarFlareRecoveryActive = False
+                    cls.solarFlareElapsed = (
+                        len(cls.solarFlarePixels)
+                        / cls.solarFlarePixelCount
+                        * cls.solarFlareRampDuration
+                    )
+                cls.solarFlareElapsed = min(
+                    cls.solarFlareRampDuration,
+                    cls.solarFlareElapsed + deltaTime
+                )
+                targetPixelCount = max(
+                    cls.solarFlareInitialPixelCount,
+                    round(
+                        cls.solarFlarePixelCount
+                        * cls.solarFlareElapsed
+                        / cls.solarFlareRampDuration
+                    )
+                )
+                if cls.solarFlareElapsed >= cls.solarFlareRampDuration:
+                    rover.gameOver = True
+            else:
+                if not cls.solarFlareRecoveryActive:
+                    cls.solarFlareRecoveryActive = True
+                    cls.solarFlareRecoveryElapsed = 0.0
+                    cls.solarFlareRecoveryStartCount = len(
+                        cls.solarFlarePixels
+                    )
+                cls.solarFlareRecoveryElapsed = min(
+                    cls.solarFlareRecoveryDuration,
+                    cls.solarFlareRecoveryElapsed + deltaTime
+                )
+                recoveryProgress = (
+                    cls.solarFlareRecoveryElapsed
+                    / cls.solarFlareRecoveryDuration
+                )
+                targetPixelCount = round(
+                    cls.solarFlareRecoveryStartCount
+                    * (1.0 - recoveryProgress)
+                )
+
+            if len(cls.solarFlarePixels) > targetPixelCount:
+                del cls.solarFlarePixels[targetPixelCount:]
+            else:
+                cls.solarFlarePixels.extend(
+                    cls._createSolarFlarePixel(screenSize)
+                    for _ in range(
+                        targetPixelCount - len(cls.solarFlarePixels)
+                    )
+                )
+            if deltaTime > 0.0:
+                for pixel in cls.solarFlarePixels:
+                    pixel['x'] = random.randrange(screenWidth)
+                    pixel['y'] = random.randrange(screenHeight)
+            if not cls.solarFlarePixels:
+                cls.solarFlareActive = False
+                cls.solarFlareElapsed = 0.0
+                cls.solarFlareRecoveryActive = False
+                cls.solarFlareRecoveryElapsed = 0.0
+                cls.solarFlareRecoveryStartCount = 0
+
         if cls.dustTexture is not None and cls.dustScreenSize != screenSize:
             cls.dustScreenSize = screenSize
             scaleFactor = Texture.getScaleFactor(screenSize) * 6.0
@@ -129,6 +267,45 @@ class EnvironmentManager:
         else:
             cls.stormIntensity = 0.0
 
+        hourIndex = int(cls.localTimeHour)
+        hourFraction = cls.localTimeHour - hourIndex
+        previousTemperature = cls.hourlySurfaceTemperaturesC[
+            (hourIndex - 1) % 24
+        ]
+        currentTemperature = cls.hourlySurfaceTemperaturesC[hourIndex]
+        nextTemperature = cls.hourlySurfaceTemperaturesC[
+            (hourIndex + 1) % 24
+        ]
+        followingTemperature = cls.hourlySurfaceTemperaturesC[
+            (hourIndex + 2) % 24
+        ]
+        hourFractionSquared = hourFraction * hourFraction
+        clearTemperature = 0.5 * (
+            2.0 * currentTemperature
+            + (-previousTemperature + nextTemperature) * hourFraction
+            + (
+                2.0 * previousTemperature
+                - 5.0 * currentTemperature
+                + 4.0 * nextTemperature
+                - followingTemperature
+            ) * hourFractionSquared
+            + (
+                -previousTemperature
+                + 3.0 * currentTemperature
+                - 3.0 * nextTemperature
+                + followingTemperature
+            ) * hourFractionSquared * hourFraction
+        )
+        clearTemperature = max(-80.0, min(-23.0, clearTemperature))
+        stormTemperatureOffset = (
+            cls.nightBlend * cls.stormNightWarmingC
+            - (1.0 - cls.nightBlend) * cls.stormDayCoolingC
+        )
+        cls.surfaceTemperatureC = (
+            clearTemperature
+            + stormTemperatureOffset * cls.stormIntensity
+        )
+
         if cls.stormIntensity <= 0.0:
             if cls.dustParticlesActive:
                 for particle in cls.dustParticles:
@@ -168,100 +345,62 @@ class EnvironmentManager:
                 particle['baseY'] = random.uniform(0.0, screenHeight)
         cls.dustParticlesActive = hasActiveParticles
 
-    @classmethod
-    def applyWeather(cls, rover, deltaTime):
-        if cls.stormIntensity <= 0.0 or deltaTime <= 0.0:
-            return
-
-        gust = 0.8 + 0.2 * math.sin(cls.elapsedTime * 0.7)
-        rover.applyWind(
-            -cls.windAcceleration * gust * cls.stormIntensity,
-            0.0,
-            deltaTime
-        )
-
-    @classmethod
-    def getCameraOffset(cls, cameraCoords, screenSize):
-        scaleFactor = Texture.getScaleFactor(screenSize)
-        return (
-            cameraCoords[0] - cls.cameraShake[0] / scaleFactor,
-            cameraCoords[1] + cls.cameraShake[1] / scaleFactor
-        )
+        if deltaTime > 0.0:
+            gust = 0.8 + 0.2 * math.sin(cls.elapsedTime * 0.7)
+            rover.applyWind(
+                -cls.windAcceleration * gust * cls.stormIntensity,
+                0.0,
+                deltaTime
+            )
 
     @classmethod
     def _getNightBlend(cls):
-        transitionDuration = min(
-            cls.dayNightTransitionDuration,
-            cls.dayNightDuration
+        solarElevation = max(
+            0.0,
+            math.sin(math.tau * (cls.localTimeHour - 6.0) / 24.0)
         )
-        if transitionDuration <= 0.0:
-            return 0.0 if cls.isDay else 1.0
-
-        halfTransition = transitionDuration * 0.5
-
-        if cls.isDay:
-            if cls.dayNightTimer < halfTransition:
-                progress = cls.dayNightTimer / halfTransition
-                return 0.5 * (1.0 - progress * progress * (3.0 - 2.0 * progress))
-            if cls.dayNightTimer >= cls.dayNightDuration - halfTransition:
-                progress = (
-                    cls.dayNightTimer - (cls.dayNightDuration - halfTransition)
-                ) / halfTransition
-                return 0.5 * progress * progress * (3.0 - 2.0 * progress)
-            return 0.0
-
-        if cls.dayNightTimer < halfTransition:
-            progress = cls.dayNightTimer / halfTransition
-            return 0.5 + 0.5 * progress * progress * (3.0 - 2.0 * progress)
-        if cls.dayNightTimer >= cls.dayNightDuration - halfTransition:
-            progress = (
-                cls.dayNightTimer - (cls.dayNightDuration - halfTransition)
-            ) / halfTransition
-            return 1.0 - 0.5 * progress * progress * (3.0 - 2.0 * progress)
-
-        return 1.0
-
-    @staticmethod
-    def _createVignette(screenSize, color, center):
-        screenWidth, screenHeight = screenSize
-        vignette = pg.Surface(screenSize, pg.SRCALPHA)
-        vignette.fill((*color, 255))
-
-        steps = 64
-        for step in range(steps + 1):
-            progress = step / steps
-            ellipseWidth = max(1, round(screenWidth * (1.0 - 0.88 * progress)))
-            ellipseHeight = max(1, round(screenHeight * (1.0 - 0.84 * progress)))
-            rect = pg.Rect(0, 0, ellipseWidth, ellipseHeight)
-            rect.center = (
-                round(screenWidth * center[0]),
-                round(screenHeight * center[1])
-            )
-            alpha = round(255 * (1.0 - progress) ** 1.5)
-            pg.draw.ellipse(vignette, (*color, alpha), rect)
-
-        return vignette
+        daylightBlend = solarElevation * solarElevation * (
+            3.0 - 2.0 * solarElevation
+        )
+        return 1.0 - daylightBlend
 
     @classmethod
-    def render(cls, screen):
+    def render(cls, screen, showSolarFlare=True):
         screenSize = screen.get_size()
-        nightBlend = cls._getNightBlend()
+        nightBlend = cls.nightBlend
 
         if cls.nightOverlay is None or cls.nightOverlay.get_size() != screenSize:
             cls.nightOverlay = pg.Surface(screenSize, pg.SRCALPHA)
             cls.nightOverlay.fill((10, 15, 35, 255))
             cls.dayOverlay = pg.Surface(screenSize, pg.SRCALPHA)
             cls.dayOverlay.fill((240, 190, 115, 255))
-            cls.dayVignette = cls._createVignette(
-                screenSize,
-                (53, 27, 18),
-                (0.46, 0.44)
-            )
-            cls.nightVignette = cls._createVignette(
-                screenSize,
-                (12, 17, 47),
-                (0.53, 0.49)
-            )
+            vignettes = []
+            screenWidth, screenHeight = screenSize
+            for color, center in (
+                ((53, 27, 18), (0.46, 0.44)),
+                ((12, 17, 47), (0.53, 0.49))
+            ):
+                vignette = pg.Surface(screenSize, pg.SRCALPHA)
+                vignette.fill((*color, 255))
+                for step in range(65):
+                    progress = step / 64
+                    ellipseWidth = max(
+                        1,
+                        round(screenWidth * (1.0 - 0.88 * progress))
+                    )
+                    ellipseHeight = max(
+                        1,
+                        round(screenHeight * (1.0 - 0.84 * progress))
+                    )
+                    rect = pg.Rect(0, 0, ellipseWidth, ellipseHeight)
+                    rect.center = (
+                        round(screenWidth * center[0]),
+                        round(screenHeight * center[1])
+                    )
+                    alpha = round(255 * (1.0 - progress) ** 1.5)
+                    pg.draw.ellipse(vignette, (*color, alpha), rect)
+                vignettes.append(vignette)
+            cls.dayVignette, cls.nightVignette = vignettes
 
         cls.dayOverlay.set_alpha(round(cls.dayAlpha * (1.0 - nightBlend)))
         cls.nightOverlay.set_alpha(round(cls.nightAlpha * nightBlend))
@@ -294,3 +433,15 @@ class EnvironmentManager:
         )
         screen.blit(cls.dayVignette, (0, 0))
         screen.blit(cls.nightVignette, (0, 0))
+        if showSolarFlare and cls.solarFlareActive:
+            for pixel in cls.solarFlarePixels:
+                pg.draw.rect(
+                    screen,
+                    (255, 255, 255),
+                    (
+                        pixel['x'],
+                        pixel['y'],
+                        pixel['size'],
+                        pixel['size']
+                    )
+                )

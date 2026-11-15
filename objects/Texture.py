@@ -2,6 +2,7 @@ import pygame as pg
 
 class Texture:
     ids = []
+    zoomFactor = 1.0
 
     def __init__(self, id, coords, rotation, scale, texture, priority=0):
         if id in Texture.ids:
@@ -23,15 +24,7 @@ class Texture:
     @staticmethod
     def getScaleFactor(screenSize):
         screenWidth, screenHeight = screenSize
-        return min(screenWidth / 1920, screenHeight / 1080)
-
-    @staticmethod
-    def screenToWorld(screenCoords, screenSize, offset=(0.0, 0.0)):
-        screenWidth, screenHeight = screenSize
-        factor = Texture.getScaleFactor(screenSize)
-        worldX = (screenCoords[0] - screenWidth / 2) / factor + offset[0]
-        worldY = (screenHeight / 2 - screenCoords[1]) / factor + offset[1]
-        return worldX, worldY
+        return min(screenWidth / 1920, screenHeight / 1080) * Texture.zoomFactor
 
     @staticmethod
     def worldToScreen(worldCoords, screenSize, offset=(0.0, 0.0)):
@@ -41,8 +34,8 @@ class Texture:
         screenY = screenHeight / 2 - (worldCoords[1] - offset[1]) * factor
         return screenX, screenY
 
-    def update(self, deltaTime=1.0 / 60.0):
-        pass
+    def update(self, _deltaTime=1.0 / 60.0):
+        del _deltaTime
 
     def render(self, screen, offset=(0.0, 0.0)):
         screenSize = screen.get_size()

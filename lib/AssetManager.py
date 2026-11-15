@@ -28,6 +28,8 @@ class AssetManager:
                 AssetManager.LOADED[key] = pg.image.load(path)
             elif 'sound' in relative.parts:
                 AssetManager.LOADED[key] = pg.mixer.Sound(path)
+            elif 'font' in relative.parts:
+                AssetManager.LOADED[key] = pg.font.Font(path, 32)
 
             print(f'[INFO] Загружен ресурс по ключу {key}')
 

@@ -28,7 +28,7 @@ class Chunk(Texture):
             surface = Chunk.generateSurface(chunkX, chunkY, chunkSize)
 
         super().__init__(
-            f'mars.chunk.{chunkX}.{chunkY}',
+            f'chunk.{chunkX}.{chunkY}',
             [worldX, worldY],
             0.0,
             1.0,
@@ -129,12 +129,6 @@ class Chunk(Texture):
         ridges = (1.0 - min(1.0, abs(detail))) ** 2.5
         craters = Chunk._craterHeight(worldX, worldY, detail)
         return base * 0.8 + ridges * 0.42 + detail * 0.24 + craters
-
-    @staticmethod
-    def terrainColorIndex(worldX, worldY):
-        return Chunk.terrainColorIndexFromHeight(
-            Chunk.terrainPixelHeight(worldX, worldY)
-        )
 
     @staticmethod
     def terrainPixelHeight(worldX, worldY):
