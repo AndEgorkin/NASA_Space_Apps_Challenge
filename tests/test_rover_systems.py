@@ -62,10 +62,39 @@ class RoverSystemsTests(unittest.TestCase):
         self.assertFalse(self.rover.isCharging)
 
     def testLeakAndBatteryFailure(self):
+        EnvironmentManager.nightBlend=1.0
         self.rover.energyLeakTimeRemaining=10;self.rover.energyLeakActive=True
         self.rover.charge=0.001
         self.rover.update(1/60)
         self.assertTrue(self.rover.gameOver)
+
+    def testDaylightCannotStartOrContinueLeak(self):
+        self.rover.engineTemperatureC=-20
+        self.rover.charge=60
+        for blend in (0.0,0.2,0.49):
+            EnvironmentManager.nightBlend=blend
+            self.rover.energyLeakActive=True
+            self.rover.energyLeakTimeRemaining=20
+            with patch('random.random',return_value=0):
+                self.rover.update(1/60)
+                self.assertFalse(self.rover.energyLeakActive)
+                self.assertEqual(self.rover.energyLeakTimeRemaining,0)
+                self.assertEqual(self.rover.charge,60)
+                self.rover.update(1/60)
+                self.assertFalse(self.rover.energyLeakActive)
+
+    def testColdNightLeakStopsAtDaylight(self):
+        self.rover.engineTemperatureC=-20
+        self.rover.charge=60
+        EnvironmentManager.nightBlend=1
+        with patch('random.random',return_value=0):self.rover.update(1/60)
+        self.assertTrue(self.rover.energyLeakActive)
+        self.assertLess(self.rover.charge,60)
+        charge=self.rover.charge
+        EnvironmentManager.nightBlend=0.49
+        self.rover.update(1/60)
+        self.assertFalse(self.rover.energyLeakActive)
+        self.assertEqual(self.rover.charge,charge)
 
     def testNasaSolAndTemperatureProfile(self):
         EnvironmentManager.update(EnvironmentManager.solDuration/2,self.screen.get_size(),self.rover)

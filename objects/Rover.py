@@ -528,7 +528,10 @@ class Rover(Texture):
             )
             self._applyDeceleration(resistance * deltaTime)
 
-        if self.energyLeakTimeRemaining > 0.0:
+        if EnvironmentManager.nightBlend < 0.5:
+            self.energyLeakTimeRemaining = 0.0
+            self.energyLeakActive = False
+        elif self.energyLeakTimeRemaining > 0.0:
             self.energyLeakTimeRemaining = max(
                 0.0,
                 self.energyLeakTimeRemaining - deltaTime
