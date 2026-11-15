@@ -30,7 +30,7 @@ class Main:
         cls.camera = None
         cls.rover = None
         cls.isRunning = True
-        pg.display.set_caption('NASA Competition Program')
+        pg.display.set_caption('The Mars mission')
 
         EnvironmentManager.reset()
         cls.base = BaseLocation(cls.screen)

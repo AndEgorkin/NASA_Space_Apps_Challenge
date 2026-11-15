@@ -60,8 +60,8 @@ class MainMenu:
             UI.text(self.screen,label,(round(x*s),round(y*s)),max(14,round(size*s)),color)
         text('ARES  /  EXPEDITION CONTROL',64,66,23,UI.cyan)
         pg.draw.line(self.screen,UI.cyan,(round(64*s),round(103*s)),(round(130*s),round(103*s)),2)
-        text('THE LONG',60,133,76)
-        text('WAY HOME',60,195,76)
+        text('The Mars',60,133,76)
+        text('mission',60,195,76)
         text('Eight discoveries. One chance to return.',64,264,24,UI.muted)
         for index, ((name,subtitle,enabled),(_,rect)) in enumerate(zip(self.entries,self.buttons)):
             active=index==self.selected and enabled

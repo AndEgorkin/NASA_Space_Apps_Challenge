@@ -1,4 +1,6 @@
-# Exploring Valles Marineris
+# The Mars mission
+
+Exploring Valles Marineris
 
 A survival and exploration adventure for ages 7–12, created for the NASA International Space Apps Challenge.
 
