@@ -131,4 +131,4 @@ The mission counter tracks **0/8** through **8/8**. Completing all eight mission
 | 6 — The Planetary Fracture | Trace fractures on a survey image, measure their directions, and compare elevation profiles. | Two E interactions for fracture mapping and an elevation profile. |
 | 8 — The Canyon Research Station | Place station equipment and connect power, water, and research modules while maintaining operating conditions. | Deliver ice, water plants, then press E near the outside of the base to deploy the station. |
 
-The map footer identifies the ice deposit as **Mission 5**. The ice information label is shown below the map rather than over its terrain.
+
