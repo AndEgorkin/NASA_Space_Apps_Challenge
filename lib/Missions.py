@@ -2,7 +2,6 @@ import pygame as pg
 from lib.RoverMap import RoverMap
 from objects.Texture import Texture
 from lib.Manipulator import Manipulator
-from lib.LandslideSurvey import LandslideSurvey
 
 
 class Missions:
@@ -12,7 +11,7 @@ class Missions:
          ('Collect a layered rock sample', 'Measure mineral composition'),
          'Minerals may indicate ancient interaction with water.'),
         ('The Great Landslide', 'Ius Chasma', ((170,295),),
-         ('Map three debris clusters', 'Determine the landslide direction'),
+         ('Map the debris', 'Inspect exposed rock layers'),
          'Debris and rock layers help reconstruct the landslide history.'),
         ('The Mysterious Dark Streaks', 'Melas / Coprates', ((410,300),),
          ('Compare seasonal images', 'Take a remote measurement'),
@@ -39,14 +38,11 @@ class Missions:
         self.progress = [0] * len(self.definitions)
         self.analysed = False
         self.manipulator = Manipulator()
-        self.landslideSurvey = LandslideSurvey()
         self.font = pg.font.Font(None, 22)
 
     @property
     def activeInteraction(self):
-        for interaction in (self.manipulator,self.landslideSurvey):
-            if interaction.active:return interaction
-        return None
+        return self.manipulator if self.manipulator.active else None
 
     def cancelInteraction(self):
         if self.activeInteraction is not None:self.activeInteraction.cancel()
@@ -54,14 +50,6 @@ class Missions:
     def handleInteractionEvent(self, event, coords, survival, screenSize):
         if self.manipulator.active:
             if event.type==pg.KEYDOWN and event.key==pg.K_e:self.manipulatorAction(coords,survival)
-        elif self.landslideSurvey.active:
-            if pg.Vector2(coords).distance_to(RoverMap.mapToWorld(self.target(1)))>self.radius:
-                self.landslideSurvey.cancel()
-                return
-            result=self.landslideSurvey.handleEvent(event,screenSize)
-            if result=='mapped' and self.progress[1]==0:self._advanceMission(1,survival)
-            elif result=='complete' and self.progress[1]==1:self._advanceMission(1,survival)
-
     def done(self, index):
         return self.progress[index] >= len(self.definitions[index][3]) and (index != 0 or self.analysed)
 
@@ -107,9 +95,6 @@ class Missions:
             self.manipulator.start()
             survival.notify('Manipulator deployed. WASD: move, E: grab/store, Esc: cancel.')
             return
-        if index == 1:
-            self.landslideSurvey.start(mapped=self.progress[1]>0)
-            return
         if index == 7 and (survival.deliveredWater < 1 or survival.wateredPlants < 1):
             survival.notify('Station: first deliver water and water the plants at base.')
             return
@@ -129,7 +114,7 @@ class Missions:
     def updateInteractions(self, seconds, rover, survival):
         interaction=self.activeInteraction
         if interaction is None:return
-        index=0 if self.manipulator.active else 1
+        index=0
         if (rover.gameOver or not rover.systemsOn or pg.Vector2(rover.coords).distance_to(
                 RoverMap.mapToWorld(self.target(index)))>self.radius):
             interaction.cancel()

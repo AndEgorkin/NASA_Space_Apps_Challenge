@@ -70,7 +70,7 @@ class RoverMap:
         ice = project(self.icePixel)
         pg.draw.circle(screen, '#68c9ed', ice, 8)
         waterLabel = self.font.render('Ice deposit / Mission 5', True, '#a0e6ff')
-        screen.blit(waterLabel, ice + (-150, 16))
+        screen.blit(waterLabel, (24, height - 38))
         if missions is not None:
             route=[project(point) for point in missions.definitions[6][2]]
             pg.draw.lines(screen,'#b39769',False,route,2)
@@ -96,5 +96,5 @@ class RoverMap:
             tangent = (point - pg.Vector2(rect.center)).normalize().rotate(90)
             pg.draw.line(screen, '#50ff98', edge-tangent*16, edge+tangent*16, 7)
             screen.blit(self.font.render('ROVER', True, '#50ff98'), edge + (10,-25))
-        label = 'M / Esc: close | Green: rover | Blue: base / water'
+        label = 'M / Esc: close | Green: rover | Blue: base / ice'
         screen.blit(self.font.render(label, True, 'white'), (24,20))
