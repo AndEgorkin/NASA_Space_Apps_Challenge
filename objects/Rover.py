@@ -43,8 +43,8 @@ class Rover:
     stationarySpeedThreshold = 1.0
     stationaryRechargeDelay = 3.0
     stationaryRechargeRate = 2.0
-    energyLeakTemperatureC = 12.0
-    energyLeakTemperatureRangeC = 15.0
+    energyLeakTemperatureC = 5.0
+    energyLeakTemperatureRangeC = 10.0
     energyLeakEventRate = 1.0 / 20.0
     energyLeakDuration = 20.0
     energyLeakDrainRate = 0.8
