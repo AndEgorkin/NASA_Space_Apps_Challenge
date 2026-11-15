@@ -148,6 +148,30 @@ class BaseLocation:
                 return True
         return False
 
+    @staticmethod
+    def _scalePlayerFrame(source, size):
+        # Own the pixel format rather than inheriting SDL surface flags.
+        frame = pg.Surface(size, pg.SRCALPHA, 32)
+        pg.transform.smoothscale(source.convert_alpha(), size, frame)
+        width, height = size
+        # Some backends/sprite exports expose transparent padding as opaque black.
+        # Remove only background connected to the border, preserving dark details.
+        pending = [(x,y) for x in range(width) for y in (0,height-1)]
+        pending += [(x,y) for y in range(height) for x in (0,width-1)]
+        visited = set()
+        while pending:
+            x,y = pending.pop()
+            if (x,y) in visited or not (0 <= x < width and 0 <= y < height):
+                continue
+            visited.add((x,y))
+            color = frame.get_at((x,y))
+            if color.a == 0 or max(color.r,color.g,color.b) <= 3:
+                frame.set_at((x,y),(0,0,0,0))
+                pending.extend(((x-1,y),(x+1,y),(x,y-1),(x,y+1)))
+        # Explicit premultiplied blending also handles surfaces whose normal
+        # per-pixel alpha blit path differs between SDL builds.
+        return frame.premul_alpha()
+
     def render(self, hint=None):
         width, height = self.screen.get_size()
         scale = min((width - 48) / 240, (height - 180) / 140)
@@ -164,13 +188,13 @@ class BaseLocation:
         spriteSize = (round(12 * scale), round(16 * scale))
         if spriteSize not in self._scaledFrames:
             self._scaledFrames = {spriteSize: [
-                [pg.transform.smoothscale(source, spriteSize) for source in row]
+                [self._scalePlayerFrame(source, spriteSize) for source in row]
                 for row in self.walkFrames
             ]}
         image = self._scaledFrames[spriteSize][self.facing][frame]
         feet = (round(offset[0] + self.position.x * scale),
                 round(offset[1] + (self.position.y + 2) * scale))
-        self.screen.blit(image, image.get_rect(midbottom=feet))
+        self.screen.blit(image, image.get_rect(midbottom=feet), special_flags=pg.BLEND_PREMULTIPLIED)
         # Room identification and controls stay outside the play area.
         UI.text(self.screen,'ARES  /  HABITAT',(24,16),20,UI.cyan)
         UI.text(self.screen,self.roomNames[self.room].upper(),(24,38),32)
