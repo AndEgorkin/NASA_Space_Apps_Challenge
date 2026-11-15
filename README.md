@@ -88,3 +88,23 @@ python -m unittest discover -s tests -v
 ```
 
 Use `camelCase` for variables and functions, `PascalCase` for class names, and a leading underscore for private fields and methods, such as `_doSomething()`. Keep one class per file and put executable logic inside functions or methods.
+
+
+## Research missions
+
+Open the rover map with **M** to see eight numbered research sites and their progress. Drive close to a marker and press **E** once for each step shown in the interaction hint. Most missions use two interactions at the same site. Missions can be attempted in any order, subject to the requirements below. Research actions are simplified virtual measurements; marker positions are chosen for gameplay rather than precise geographic accuracy.
+
+| # | Mission | Location | How to complete it |
+|---|---|---|---|
+| 1 | **The Ancient Water Mystery** | Hebes / Candor Chasma | Press **E** to collect a layered rock sample, then again to measure its mineral composition. Return the rover to the outside of the base. Press **Esc**, approach the control-room computer, and press **E** to analyze the returned sample. This final analysis completes the mission; another **E** resumes rover control. |
+| 2 | **The Great Landslide** | Ius Chasma | Press **E** to map the debris, then again to inspect exposed rock layers. The observations help reconstruct how the landslide changed the canyon. |
+| 3 | **The Mysterious Dark Streaks** | Melas / Coprates Chasma | Press **E** to compare seasonal images, then again to take a remote measurement. The cause of these streaks remains debated: salts and dry flows are possible explanations, and liquid water is not confirmed. |
+| 4 | **The Geological Archive** | Hebes Chasma | Press **E** to photograph the rock layers, then again to compare their sequence and reconstruct the relative order of geological events. |
+| 5 | **The Lost Underground Reservoir** | Eastern Valles Marineris | Press **E** to map collapsed terrain, then again to scan and discover underground ice. Completing these steps unlocks ice extraction at the same site. Subsequent **E** presses collect ice into the rover, up to five units. Return to the outside of the base and press **E** to unload and melt it: one unit of ice becomes one unit of water in the base inventory. The accessible deposit is a fictional gameplay resource. |
+| 6 | **The Planetary Fracture** | Noctis Labyrinthus | Press **E** to map fractures, then again to measure an elevation profile. These observations introduce tectonics and the influence of the Tharsis uplift. |
+| 7 | **The Impossible Route** | Canyon-floor route | Visit three waypoints in order. Press **E** at the first to check slope, at the second to check traction, and at the third to complete the route. Marker **7** moves to the next waypoint after each step. |
+| 8 | **The Canyon Research Station** | Base plateau | First deliver at least one unit of ice and convert it to water at the base. Use water to tend the hydroponic beds at least once while provisions are below full. Then operate the rover near the outside of the base and press **E** to deploy the station. |
+
+### Completion and rescue
+
+The mission counter tracks **0/8** through **8/8**. Completing all eight missions while survival reserves remain triggers the rescue ending automatically. Oxygen lasts **20 real-time minutes** and cannot currently be replenished. Exhausted oxygen or provisions ends the attempt; a flat rover battery or signal loss during an unprotected solar flare also causes failure. Press **Enter** on the result screen to begin a new attempt. Mission progress is kept only for the current run.
