@@ -10,6 +10,8 @@ from objects.BoundingBox import BoundingBox
 from objects.Rover import Rover
 from objects.Texture import Texture
 from objects.IceDeposit import IceDeposit
+from objects.RouteCourse import RouteCourse
+from lib.Missions import Missions
 
 
 class MarsSurface:
@@ -22,6 +24,9 @@ class MarsSurface:
         self.station = Texture('station', RoverMap.baseCoords, 30, 7.5,
                                AssetManager.get('assets.texture.station'), 50)
         self.objects = [self.rover, self.station, IceDeposit()]
+        rocks,collisions=RouteCourse.build(Missions.definitions[6][2])
+        self.objects.extend(rocks)
+        self.rover.boundingBoxes.extend(collisions)
         self._addStationCollisions()
         self._ensureSafeSpawn()
         self.camera = Camera(self.rover.coords)

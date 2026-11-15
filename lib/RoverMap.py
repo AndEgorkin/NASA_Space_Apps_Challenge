@@ -72,6 +72,9 @@ class RoverMap:
         waterLabel = self.font.render('Ice deposit / Mission 5', True, '#a0e6ff')
         screen.blit(waterLabel, ice + (-150, 16))
         if missions is not None:
+            route=[project(point) for point in missions.definitions[6][2]]
+            pg.draw.lines(screen,'#b39769',False,route,2)
+            for waypoint in route:pg.draw.circle(screen,'#b39769',waypoint,3)
             for i, definition in enumerate(missions.definitions):
                 marker = project(missions.target(i))
                 color = '#83d674' if missions.done(i) else '#ffb544'

@@ -17,6 +17,12 @@ class MissionTests(unittest.TestCase):
     def pressAt(self, index):
         coords=RoverMap.mapToWorld(self.missions.target(index))
         self.missions.roverAction(coords,self.survival)
+        if index == 0 and self.missions.manipulator.active:
+            arm=self.missions.manipulator
+            arm.tip.update(arm.sample)
+            self.missions.manipulatorAction(coords,self.survival)
+            arm.tip.update(arm.tray)
+            self.missions.manipulatorAction(coords,self.survival)
 
     def testCompleteAllAndEvacuate(self):
         for i in range(7):
@@ -47,10 +53,10 @@ class MissionTests(unittest.TestCase):
         self.pressAt(6)
         self.missions.roverAction(first,self.survival)
         self.assertEqual(self.missions.progress[6],1)
-        self.pressAt(6);self.pressAt(6)
+        for _ in range(len(self.missions.definitions[6][3])-1):self.pressAt(6)
         self.assertTrue(self.missions.done(6))
         self.pressAt(6)
-        self.assertEqual(self.missions.progress[6],3)
+        self.assertEqual(self.missions.progress[6],len(self.missions.definitions[6][3]))
 
     def testOxygenExpiryWithoutCompletionLoses(self):
         self.survival.update(1200)

@@ -1,6 +1,7 @@
 import pygame as pg
 from lib.RoverMap import RoverMap
 from objects.Texture import Texture
+from lib.Manipulator import Manipulator
 
 
 class Missions:
@@ -24,8 +25,8 @@ class Missions:
         ('The Planetary Fracture', 'Noctis Labyrinthus', ((90,225),),
          ('Map the fractures', 'Measure an elevation profile'),
          'Fractures reveal clues to tectonics and the uplift of Tharsis.'),
-        ('The Impossible Route', 'Canyon route', ((430,345),(390,365),(350,390)),
-         ('Check slope at waypoint 1', 'Check traction at waypoint 2', 'Complete the safe route'),
+        ('The Impossible Route', 'Canyon route', ((440,405),(405,435),(360,410),(315,445),(265,415)),
+         ('Enter the rock field', 'Pass the first rock gate', 'Navigate the middle section', 'Clear the final rock gate', 'Complete the safe route'),
          'Topography and traction constrain rover routes.'),
         ('The Canyon Research Station', 'Base plateau', ((480,365),),
          ('Deploy the station after delivering water and watering plants',),
@@ -36,6 +37,7 @@ class Missions:
     def __init__(self):
         self.progress = [0] * len(self.definitions)
         self.analysed = False
+        self.manipulator = Manipulator()
         self.font = pg.font.Font(None, 22)
 
     def done(self, index):
@@ -79,9 +81,16 @@ class Missions:
         index = self.nearby(coords)
         if index is None:
             return
+        if index == 0 and self.progress[0] == 0:
+            self.manipulator.start()
+            survival.notify('Manipulator deployed. WASD: move, E: grab/store, Esc: cancel.')
+            return
         if index == 7 and (survival.deliveredWater < 1 or survival.wateredPlants < 1):
             survival.notify('Station: first deliver water and water the plants at base.')
             return
+        self._advanceMission(index,survival)
+
+    def _advanceMission(self, index, survival):
         self.progress[index] += 1
         if index == 0 and self.progress[index] == len(self.definitions[index][3]):
             survival.notify('Sample ready. Press E at the base computer to analyse minerals.')
@@ -91,6 +100,25 @@ class Missions:
             survival.notify(f'Mission {index+1} complete. ' + self.definitions[index][4])
         else:
             survival.notify(f'Mission {index+1}: step complete. Press E for the next step.')
+
+    def updateManipulator(self, seconds, rover, survival):
+        if not self.manipulator.active:
+            return
+        if (rover.gameOver or not rover.systemsOn or
+                pg.Vector2(rover.coords).distance_to(RoverMap.mapToWorld(self.target(0))) > self.radius):
+            self.manipulator.cancel()
+            survival.notify('Manipulator retracted. Return to the sample site with systems ON.')
+            return
+        self.manipulator.update(seconds)
+
+    def manipulatorAction(self, coords, survival):
+        if (self.progress[0] != 0 or pg.Vector2(coords).distance_to(
+                RoverMap.mapToWorld(self.target(0))) > self.radius):
+            self.manipulator.cancel()
+            return
+        if self.manipulator.interact():
+            self._advanceMission(0,survival)
+            survival.notify('Rock sample stored. Press E to measure its mineral composition.')
 
     def analyseAtBase(self, survival, roverCoords):
         if self.progress[0] >= len(self.definitions[0][3]) and not self.analysed:

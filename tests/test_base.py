@@ -111,6 +111,8 @@ class BaseTests(unittest.TestCase):
         Main.clock = pg.time.Clock()
         pg.event.clear()
         pg.event.post(event(pg.K_ESCAPE))
+        from lib.Missions import Missions
+        Main.missions = Missions()
         Main.tick()
         self.assertEqual(Main.scene, 'base')
 

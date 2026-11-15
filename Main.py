@@ -158,19 +158,29 @@ class Main:
                 cls.isRunning = False
                 return
             if event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE:
+                if cls.missions.manipulator.active:
+                    cls.missions.manipulator.cancel()
+                    continue
                 if getattr(cls, 'mapOpen', False):
                     cls.mapOpen = False
                     continue
                 cls.scene = 'base'
                 return
+            if cls.missions.manipulator.active:
+                if event.type == pg.KEYDOWN and event.key == pg.K_e:
+                    cls.missions.manipulatorAction(cls.rover.coords,cls.survival)
+                continue
             cls.surface.handleEvent(event)
             if event.type == pg.KEYDOWN and event.key == pg.K_m:
                 cls.mapOpen = not cls.mapOpen
             if event.type == pg.KEYDOWN and event.key == pg.K_e and not cls.mapOpen and cls.rover.systemsOn and not cls.rover.gameOver:
                 cls.survival.roverAction(cls.rover.coords)
                 cls.missions.roverAction(cls.rover.coords, cls.survival)
+                if cls.missions.manipulator.active:
+                    cls.rover.velocity = cls.rover.lateralVelocity = 0.0
 
-        cls.surface.update(deltaTime, cls.screen.get_size(), controlsEnabled=not cls.mapOpen)
+        cls.surface.update(deltaTime, cls.screen.get_size(), controlsEnabled=not cls.mapOpen and not cls.missions.manipulator.active)
+        cls.missions.updateManipulator(deltaTime,cls.rover,cls.survival)
         if cls.mapOpen:
             cls.roverMap.render(cls.screen, cls.rover, cls.missions)
             cls.survival.render(cls.screen)
@@ -185,6 +195,7 @@ class Main:
         actionHint = cls.missions.hint(cls.rover.coords) or cls.survival.roverHint(cls.rover.coords)
         cls.survival.render(cls.screen, actionHint)
         cls.missions.renderStatus(cls.screen)
+        cls.missions.manipulator.render(cls.screen)
         pg.display.flip()
         cls.clock.tick(60)
 
