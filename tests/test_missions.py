@@ -55,3 +55,13 @@ class MissionTests(unittest.TestCase):
     def testOxygenExpiryWithoutCompletionLoses(self):
         self.survival.update(1200)
         self.assertEqual(self.missions.ending(self.survival),'depleted')
+
+    def testUndeliveredSampleDoesNotBlockRoverControl(self):
+        self.pressAt(0);self.pressAt(0)
+        # False lets the terminal continue into Main.startRover instead of
+        # consuming E on a failed analysis and trapping the player on base.
+        self.assertFalse(self.missions.analyseAtBase(self.survival,(10000,10000)))
+        self.assertFalse(self.missions.done(0))
+        self.assertTrue(self.missions.analyseAtBase(self.survival,RoverMap.baseCoords))
+        self.assertTrue(self.missions.done(0))
+        self.assertFalse(self.missions.analyseAtBase(self.survival,RoverMap.baseCoords))

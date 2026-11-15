@@ -95,8 +95,8 @@ class Missions:
     def analyseAtBase(self, survival, roverCoords):
         if self.progress[0] >= len(self.definitions[0][3]) and not self.analysed:
             if pg.Vector2(roverCoords).distance_to(RoverMap.baseCoords) > RoverMap.baseInteractionRadius:
-                survival.notify('First return the rover and its sample to base.')
-                return True
+                survival.notify('Resuming rover control. Bring the sample back to base for analysis.')
+                return False
             self.analysed = True
             survival.notify('Mission 1: analysis complete. ' + self.definitions[0][4])
             return True
