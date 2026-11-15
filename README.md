@@ -124,7 +124,7 @@ The mission counter tracks **0/8** through **8/8**. Completing all eight mission
 
 | Mission | Proposed interactive expansion | Current behavior |
 |---|---|---|
-| 2 — The Great Landslide | Map three distinct debris clusters on a simplified survey image, infer the flow direction relative to a cliff, and confirm an interpretation. Incorrect answers would give hints. This interactive survey has been removed from gameplay and remains a concept only. | Two E interactions for mapping debris and inspecting exposed layers. |
+| 2 — The Great Landslide | Map three distinct debris clusters on a simplified survey image, infer the flow direction relative to a cliff, and confirm an interpretation. Incorrect answers would give hints. | Two E interactions for mapping debris and inspecting exposed layers. |
 | 3 — The Mysterious Dark Streaks | Switch between seasonal images, mark changed areas, and compare possible explanations without treating liquid water as proven. | Two E interactions for image comparison and a remote measurement. |
 | 4 — The Geological Archive | Aim a camera at several formations, collect photographs, and arrange layer/event cards into a relative geological timeline. | Two E interactions for photographs and layer comparison. |
 | 5 — The Lost Underground Reservoir | Scan a grid for an ice signature, choose a drilling location, and control extraction power or drill temperature. | Two E research steps unlock ice; further E presses collect it for delivery and melting at base. |
