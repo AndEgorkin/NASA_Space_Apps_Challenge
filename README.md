@@ -106,3 +106,10 @@ Enter на итоговом экране сбрасывает миссии, ин
 - MarsSurface owns terrain, camera, station collisions and rover rendering.
   All disk assets, including the HUD font, are loaded by AssetManager.
 - Scientific inputs and gameplay simplifications are documented in NASA.md.
+
+# Sleeping at base
+In Crew Cabins, approach the lower edge of the beds at the top of the room.
+Press E at night to sleep until 09:00 local solar time. Daytime sleep is disabled.
+The skipped interval uses the compressed 180-second sol; oxygen and food
+are consumed for that interval. Sleeping can exhaust remaining supplies.
+It does not refill supplies or instantly recharge the rover.

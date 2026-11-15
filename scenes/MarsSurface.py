@@ -18,7 +18,6 @@ class MarsSurface:
     zoomTransitionDuration = 0.45
 
     def __init__(self):
-        EnvironmentManager.reset()
         self.rover = Rover()
         RoverSave.load(self.rover, RoverMap.spawnCoords)
         self.station = Texture('station', RoverMap.baseCoords, 30, 7.5,

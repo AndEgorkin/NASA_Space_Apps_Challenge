@@ -1,5 +1,6 @@
 import pygame as pg
 
+from lib.EnvironmentManager import EnvironmentManager
 from lib.AssetManager import AssetManager
 from lib.BaseLocation import BaseLocation
 from lib.MainMenu import MainMenu
@@ -31,6 +32,7 @@ class Main:
         cls.isRunning = True
         pg.display.set_caption('NASA Competition Program')
 
+        EnvironmentManager.reset()
         cls.base = BaseLocation(cls.screen)
         cls.roverMap = RoverMap()
         cls.mapOpen = False
@@ -68,6 +70,9 @@ class Main:
                         if action == 'menu':
                             cls.scene = 'menu'
                             break
+                        if action == 'sleep':
+                            cls.sleepAtBase()
+                            break
                         if action == 'water':
                             cls.survival.waterPlants()
                         if action == 'rover':
@@ -79,6 +84,8 @@ class Main:
                         cls.base.update(deltaTime)
                         cls.base.render()
                         hint = 'E: water plants (+food)' if cls.base.canWaterPlants() else ''
+                        if cls.base.canSleep():
+                            hint = 'E: sleep until 09:00' if not EnvironmentManager.isDay else 'E: rest (night only)'
                         cls.survival.render(cls.screen, hint)
                         cls.missions.renderStatus(cls.screen)
                         pg.display.flip()
@@ -87,6 +94,23 @@ class Main:
         finally:
             RoverSave.save(cls.rover)
             pg.quit()
+
+    @classmethod
+    def sleepAtBase(cls):
+        if not cls.base.canSleep():
+            return
+        skipped = EnvironmentManager.skipNight()
+        if skipped <= 0:
+            cls.survival.notify('It is daytime. You can sleep here at night.')
+            return
+        cls.survival.update(skipped)
+        cls.base.isWalking = False
+        cls.base.walkTime = 0.0
+        cls.survival.notify('You slept until 09:00. Oxygen and food were consumed during sleep.')
+        cls.survivalTicks = pg.time.get_ticks()
+        ending = cls.missions.ending(cls.survival)
+        if ending is not None:
+            cls.scene = ending
 
     @classmethod
     def showEnding(cls):

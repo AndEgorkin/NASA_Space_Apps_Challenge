@@ -75,6 +75,10 @@ class BaseLocation:
     def canWaterPlants(self):
         return self.room == 'plants' and 24 <= self.position.x <= 214 and 18 <= self.position.y <= 37
 
+    def canSleep(self):
+        # Approach the lower edge of the beds; their collision extends to y=64.
+        return self.room == 'crew' and 62 <= self.position.x <= 182 and 77 <= self.position.y <= 91
+
     def handleEvent(self, event):
         if event.type == pg.QUIT:
             return 'quit'
@@ -85,6 +89,8 @@ class BaseLocation:
                 return 'rover'
             if event.key == pg.K_e and self.canWaterPlants():
                 return 'water'
+            if event.key == pg.K_e and self.canSleep():
+                return 'sleep'
         return None
 
     def _blocked(self, position):

@@ -108,17 +108,7 @@ class EnvironmentManager:
     @classmethod
     def update(cls, deltaTime, screenSize, rover):
         deltaTime = max(0.0, deltaTime)
-        cls.elapsedTime += deltaTime
-        cls.dayNightTimer = (cls.dayNightTimer + deltaTime) % cls.solDuration
-        cls.localTimeHour = (
-            12.0 + cls.dayNightTimer / cls.solDuration * 24.0
-        ) % 24.0
-        cls.clockUpdateTimer += deltaTime
-        if cls.clockUpdateTimer >= cls.clockUpdateInterval:
-            cls.clockUpdateTimer %= cls.clockUpdateInterval
-            cls.displayedLocalTimeHour = cls.localTimeHour
-        cls.nightBlend = cls._getNightBlend()
-        cls.isDay = cls.nightBlend < 0.5
+        cls._advanceClock(deltaTime)
 
         cls.stormCheckTimer += deltaTime
         if cls.sandstormEnabled:
@@ -286,44 +276,7 @@ class EnvironmentManager:
         else:
             cls.stormIntensity = 0.0
 
-        hourIndex = int(cls.localTimeHour)
-        hourFraction = cls.localTimeHour - hourIndex
-        previousTemperature = cls.hourlySurfaceTemperaturesC[
-            (hourIndex - 1) % 24
-        ]
-        currentTemperature = cls.hourlySurfaceTemperaturesC[hourIndex]
-        nextTemperature = cls.hourlySurfaceTemperaturesC[
-            (hourIndex + 1) % 24
-        ]
-        followingTemperature = cls.hourlySurfaceTemperaturesC[
-            (hourIndex + 2) % 24
-        ]
-        hourFractionSquared = hourFraction * hourFraction
-        clearTemperature = 0.5 * (
-            2.0 * currentTemperature
-            + (-previousTemperature + nextTemperature) * hourFraction
-            + (
-                2.0 * previousTemperature
-                - 5.0 * currentTemperature
-                + 4.0 * nextTemperature
-                - followingTemperature
-            ) * hourFractionSquared
-            + (
-                -previousTemperature
-                + 3.0 * currentTemperature
-                - 3.0 * nextTemperature
-                + followingTemperature
-            ) * hourFractionSquared * hourFraction
-        )
-        clearTemperature = max(-80.0, min(-23.0, clearTemperature))
-        stormTemperatureOffset = (
-            cls.nightBlend * cls.stormNightWarmingC
-            - (1.0 - cls.nightBlend) * cls.stormDayCoolingC
-        )
-        cls.surfaceTemperatureC = (
-            clearTemperature
-            + stormTemperatureOffset * cls.stormIntensity
-        )
+        cls._updateTemperature()
 
         if cls.stormIntensity <= 0.0:
             if cls.dustParticlesActive:
@@ -371,6 +324,72 @@ class EnvironmentManager:
                 0.0,
                 deltaTime
             )
+
+    @classmethod
+    def _advanceClock(cls, deltaTime):
+        cls.elapsedTime += deltaTime
+        cls.dayNightTimer = (cls.dayNightTimer + deltaTime) % cls.solDuration
+        cls.localTimeHour = (
+            12.0 + cls.dayNightTimer / cls.solDuration * 24.0
+        ) % 24.0
+        cls.clockUpdateTimer += deltaTime
+        if cls.clockUpdateTimer >= cls.clockUpdateInterval:
+            cls.clockUpdateTimer %= cls.clockUpdateInterval
+            cls.displayedLocalTimeHour = cls.localTimeHour
+        cls.nightBlend = cls._getNightBlend()
+        cls.isDay = cls.nightBlend < 0.5
+
+    @classmethod
+    def _updateTemperature(cls):
+        hourIndex = int(cls.localTimeHour)
+        hourFraction = cls.localTimeHour - hourIndex
+        previousTemperature = cls.hourlySurfaceTemperaturesC[
+            (hourIndex - 1) % 24
+        ]
+        currentTemperature = cls.hourlySurfaceTemperaturesC[hourIndex]
+        nextTemperature = cls.hourlySurfaceTemperaturesC[
+            (hourIndex + 1) % 24
+        ]
+        followingTemperature = cls.hourlySurfaceTemperaturesC[
+            (hourIndex + 2) % 24
+        ]
+        hourFractionSquared = hourFraction * hourFraction
+        clearTemperature = 0.5 * (
+            2.0 * currentTemperature
+            + (-previousTemperature + nextTemperature) * hourFraction
+            + (
+                2.0 * previousTemperature
+                - 5.0 * currentTemperature
+                + 4.0 * nextTemperature
+                - followingTemperature
+            ) * hourFractionSquared
+            + (
+                -previousTemperature
+                + 3.0 * currentTemperature
+                - 3.0 * nextTemperature
+                + followingTemperature
+            ) * hourFractionSquared * hourFraction
+        )
+        clearTemperature = max(-80.0, min(-23.0, clearTemperature))
+        stormTemperatureOffset = (
+            cls.nightBlend * cls.stormNightWarmingC
+            - (1.0 - cls.nightBlend) * cls.stormDayCoolingC
+        )
+        cls.surfaceTemperatureC = (
+            clearTemperature
+            + stormTemperatureOffset * cls.stormIntensity
+        )
+
+    @classmethod
+    def skipNight(cls):
+        if cls.isDay:
+            return 0.0
+        hours = (9.0 - cls.localTimeHour) % 24.0
+        seconds = hours / 24.0 * cls.solDuration
+        cls._advanceClock(seconds)
+        cls.displayedLocalTimeHour = cls.localTimeHour
+        cls._updateTemperature()
+        return seconds
 
     @classmethod
     def _getNightBlend(cls):
