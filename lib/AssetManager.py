@@ -1,38 +1,39 @@
-import pygame as pg
 import sys
-
 from pathlib import Path
 
+import pygame as pg
+
+
 class AssetManager:
+    BASE = Path(getattr(sys, '_MEIPASS', Path(__file__).resolve().parent.parent)) / 'assets'
     LOADED = {}
-    BASE = Path(
-        getattr(
-            sys, 
-            '_MEIPASS', 
-            Path(__file__).parent.parent
-            )
-    ) / 'assets'
-    
-    
-    @staticmethod
-    def init(directory=BASE):
-        for path in directory.iterdir():
-            if path.is_dir():
-                AssetManager.init(path)
+    imageExtensions = {'.png', '.jpg', '.jpeg', '.bmp'}
+    soundExtensions = {'.wav', '.ogg', '.mp3'}
+
+    @classmethod
+    def init(cls, directory=None):
+        directory = cls.BASE if directory is None else Path(directory)
+        for path in sorted(directory.rglob('*')):
+            if not path.is_file():
                 continue
-
-            relative = path.relative_to(AssetManager.BASE)
+            relative = path.relative_to(cls.BASE)
             key = 'assets.' + '.'.join(relative.with_suffix('').parts)
+            if key in cls.LOADED:
+                continue
+            extension = path.suffix.lower()
+            if extension in cls.imageExtensions:
+                asset = pg.image.load(str(path))
+                if pg.display.get_surface() is not None:
+                    asset = asset.convert_alpha()
+            elif extension in {'.ttf', '.otf'}:
+                asset = pg.font.Font(str(path), 32)
+            elif extension in cls.soundExtensions:
+                asset = pg.mixer.Sound(str(path))
+            else:
+                continue
+            cls.LOADED[key] = asset
+            print(f'[INFO] Loaded asset {key}')
 
-            if 'texture' in relative.parts:
-                AssetManager.LOADED[key] = pg.image.load(path)
-            elif 'sound' in relative.parts:
-                AssetManager.LOADED[key] = pg.mixer.Sound(path)
-            elif 'font' in relative.parts:
-                AssetManager.LOADED[key] = pg.font.Font(path, 32)
-
-            print(f'[INFO] Загружен ресурс по ключу {key}')
-
-    @staticmethod
-    def get(key):
-        return AssetManager.LOADED[key]
+    @classmethod
+    def get(cls, key):
+        return cls.LOADED[key]

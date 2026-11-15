@@ -1,4 +1,17 @@
-**/__pycache__/
-**/*.pyc
-**/*.pyo
-**/*.pyd
+# IDE
+.idea/
+.vscode/
+
+# Python virtual environments
+.venv/
+venv/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Secrets
+.env
+
+# Game saves
+saves/

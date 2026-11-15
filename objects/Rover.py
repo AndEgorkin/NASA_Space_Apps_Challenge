@@ -8,7 +8,7 @@ from lib.AssetManager import AssetManager
 from lib.EnvironmentManager import EnvironmentManager
 from objects.Chunk import Chunk
 
-class Rover:
+class Rover(Texture):
     maxSpeed = 180.0
     maxReverseSpeed = -80.0
     acceleration = 55.0
@@ -65,9 +65,6 @@ class Rover:
     rotation = 0.0
     scale = 6.0
     priority = float('inf')
-    texture = AssetManager.get('assets.texture.rover.base')
-    wheelsTexture = AssetManager.get('assets.texture.rover.wheels')
-    hudFont = AssetManager.get('assets.font.cairopixel')
     _cachedFactor = None
     _cachedScaledTexture = None
     _cachedWheelsRenderScale = None
@@ -87,37 +84,79 @@ class Rover:
     _wheelTrackSurface = None
     _scaledWheelTrackSurface = None
 
-    @classmethod
-    def adjustPower(cls, wheelDelta):
-        cls.powerPercent = max(
-            cls.minimumPowerPercent,
+    def __init__(self):
+        super().__init__(
+            'rover.base',
+            [0.0, 0.0],
+            0.0,
+            6,
+            AssetManager.get('assets.texture.rover.base'),
+            float('inf')
+        )
+        self.wheelsTexture = AssetManager.get('assets.texture.rover.wheels')
+        self._cachedWheelsRenderScale = None
+        self._cachedScaledWheels = None
+        self.wheelSteeringInputAngle = 0.0
+        self.wheelSteeringWobbleAngle = 0.0
+        self.velocity = 0.0
+        self.lateralVelocity = 0.0
+        self.previousGroundHeight = None
+        self.uphillLoad = 0.0
+        self.simulationTime = 0.0
+        self.wheelTrackPoints = [
+            deque(maxlen=self.wheelTrackPointLimit)
+            for _ in range(4)
+        ]
+        self.wheelTrackSampleCounts = [0, 0, 0, 0]
+        self._wheelTrackSurfaceSize = None
+        self._wheelTrackSurface = None
+        self._scaledWheelTrackSurface = None
+
+        self.hudFont = AssetManager.get('assets.font.cairopixel')
+        self.boundingBoxes = []
+        self.systemsButtonRect = pg.Rect(0, 0, 0, 0)
+        self.resetSystems()
+
+    def resetSystems(self):
+        self.charge = 100.0
+        self.powerPercent = 100.0
+        self.engineTemperatureC = 20.0
+        self.stationaryTime = 0.0
+        self.isCharging = False
+        self.energyLeakTimeRemaining = 0.0
+        self.energyLeakActive = False
+        self.systemsOn = True
+        self.gameOver = False
+        self.velocity = 0.0
+        self.lateralVelocity = 0.0
+
+    def adjustPower(self, wheelDelta):
+        self.powerPercent = max(
+            self.minimumPowerPercent,
             min(
-                cls.maximumPowerPercent,
-                cls.powerPercent + wheelDelta * cls.powerChangeStepPercent
+                self.maximumPowerPercent,
+                self.powerPercent + wheelDelta * self.powerChangeStepPercent
             )
         )
 
-    @classmethod
-    def _applyDeceleration(cls, deceleration):
-        if cls.velocity > 0.0:
-            cls.velocity = max(0.0, cls.velocity - deceleration)
-        elif cls.velocity < 0.0:
-            cls.velocity = min(0.0, cls.velocity + deceleration)
+    def _applyDeceleration(self, deceleration):
+        if self.velocity > 0.0:
+            self.velocity = max(0.0, self.velocity - deceleration)
+        elif self.velocity < 0.0:
+            self.velocity = min(0.0, self.velocity + deceleration)
 
-    @classmethod
-    def applyWind(cls, accelerationX, accelerationY, deltaTime):
+    def applyWind(self, accelerationX, accelerationY, deltaTime):
         if deltaTime <= 0.0:
             return
 
-        forwardX, forwardY, rightX, rightY = cls._getDirectionAxes()
+        forwardX, forwardY, rightX, rightY = self._getDirectionAxes()
         forwardAcceleration = accelerationX * forwardX + accelerationY * forwardY
         sideAcceleration = accelerationX * rightX + accelerationY * rightY
-        cls.velocity += forwardAcceleration * deltaTime
-        cls.lateralVelocity += sideAcceleration * deltaTime
+        self.velocity += forwardAcceleration * deltaTime
+        self.lateralVelocity += sideAcceleration * deltaTime
 
-    @classmethod
-    def _getDirectionAxes(cls):
-        angle = math.radians(cls.rotation)
+    def _getDirectionAxes(self):
+        angle = math.radians(self.rotation)
         return (
             -math.sin(angle),
             math.cos(angle),
@@ -125,11 +164,10 @@ class Rover:
             math.sin(angle)
         )
 
-    @classmethod
-    def _getWheelPositions(cls, directionAxes):
+    def _getWheelPositions(self, directionAxes):
         forwardX, forwardY, rightX, rightY = directionAxes
-        halfWheelbase = cls.wheelbase / 2.0
-        halfTrack = cls.trackWidth / 2.0
+        halfWheelbase = self.wheelbase / 2.0
+        halfTrack = self.trackWidth / 2.0
         wheelOffsets = (
             (halfWheelbase, -halfTrack),
             (halfWheelbase, halfTrack),
@@ -138,35 +176,34 @@ class Rover:
         )
         return tuple(
             (
-                cls.coords[0] + forwardX * along + rightX * across,
-                cls.coords[1] + forwardY * along + rightY * across
+                self.coords[0] + forwardX * along + rightX * across,
+                self.coords[1] + forwardY * along + rightY * across
             )
             for along, across in wheelOffsets
         )
 
-    @classmethod
-    def _updateWheelTracks(cls):
-        wheelPositions = cls._getWheelPositions(cls._getDirectionAxes())
+    def _updateWheelTracks(self):
+        wheelPositions = self._getWheelPositions(self._getDirectionAxes())
         frontWheelHeading = math.radians(
-            cls.rotation
-            + cls.wheelSteeringInputAngle
-            + cls.wheelSteeringWobbleAngle
+            self.rotation
+            + self.wheelSteeringInputAngle
+            + self.wheelSteeringWobbleAngle
         )
-        rearWheelHeading = math.radians(cls.rotation)
+        rearWheelHeading = math.radians(self.rotation)
         wheelHeadings = (
             frontWheelHeading,
             frontWheelHeading,
             rearWheelHeading,
             rearWheelHeading
         )
-        minimumDistanceSquared = cls.wheelTrackSpacing ** 2
+        minimumDistanceSquared = self.wheelTrackSpacing ** 2
         for wheelIndex, (points, position, heading) in enumerate(zip(
-            cls.wheelTrackPoints,
+            self.wheelTrackPoints,
             wheelPositions,
             wheelHeadings
         )):
-            sampleIndex = cls.wheelTrackSampleCounts[wheelIndex]
-            expirationTime = cls.simulationTime - cls.wheelTrackLifetime
+            sampleIndex = self.wheelTrackSampleCounts[wheelIndex]
+            expirationTime = self.simulationTime - self.wheelTrackLifetime
             while points and points[0][4] <= expirationTime:
                 points.popleft()
 
@@ -175,9 +212,9 @@ class Rover:
                     *position,
                     heading,
                     sampleIndex,
-                    cls.simulationTime
+                    self.simulationTime
                 ))
-                cls.wheelTrackSampleCounts[wheelIndex] += 1
+                self.wheelTrackSampleCounts[wheelIndex] += 1
                 continue
 
             lastX, lastY = points[-1][:2]
@@ -188,36 +225,35 @@ class Rover:
                     *position,
                     heading,
                     sampleIndex,
-                    cls.simulationTime
+                    self.simulationTime
                 ))
-                cls.wheelTrackSampleCounts[wheelIndex] += 1
+                self.wheelTrackSampleCounts[wheelIndex] += 1
 
-    @classmethod
-    def _renderWheelTracks(cls, screen, offset, screenSize):
+    def _renderWheelTracks(self, screen, offset, screenSize):
         screenWidth, screenHeight = screenSize
         pixelSize = max(
             1,
-            round(cls.wheelTrackPixelSize * Texture.zoomFactor)
+            round(self.wheelTrackPixelSize * Texture.zoomFactor)
         )
         if (
-            cls._wheelTrackSurfaceSize != screenSize
-            or cls._wheelTrackSurfacePixelSize != pixelSize
+            self._wheelTrackSurfaceSize != screenSize
+            or self._wheelTrackSurfacePixelSize != pixelSize
         ):
             trackSurfaceSize = (
                 (screenWidth + pixelSize - 1) // pixelSize,
                 (screenHeight + pixelSize - 1) // pixelSize
             )
-            cls._wheelTrackSurfaceSize = screenSize
-            cls._wheelTrackSurfacePixelSize = pixelSize
-            cls._wheelTrackSurface = pg.Surface(
+            self._wheelTrackSurfaceSize = screenSize
+            self._wheelTrackSurfacePixelSize = pixelSize
+            self._wheelTrackSurface = pg.Surface(
                 trackSurfaceSize,
                 pg.SRCALPHA
             )
-            cls._scaledWheelTrackSurface = pg.Surface(
+            self._scaledWheelTrackSurface = pg.Surface(
                 screenSize,
                 pg.SRCALPHA
             )
-        cls._wheelTrackSurface.fill((0, 0, 0, 0))
+        self._wheelTrackSurface.fill((0, 0, 0, 0))
 
         scaleFactor = Texture.getScaleFactor(screenSize)
         centerPixelX = round(screenWidth / (2.0 * pixelSize))
@@ -235,28 +271,28 @@ class Rover:
                 centerPixelY - worldPixelY + cameraPixelY
             )
 
-        halfWidth = screenWidth / (2.0 * scaleFactor) + cls.wheelTrackWidth
-        halfHeight = screenHeight / (2.0 * scaleFactor) + cls.wheelTrackWidth
+        halfWidth = screenWidth / (2.0 * scaleFactor) + self.wheelTrackWidth
+        halfHeight = screenHeight / (2.0 * scaleFactor) + self.wheelTrackWidth
         minX = offset[0] - halfWidth
         maxX = offset[0] + halfWidth
         minY = offset[1] - halfHeight
         maxY = offset[1] + halfHeight
         lineWidth = max(
             1,
-            round(cls.wheelTrackWidth * scaleFactor / pixelSize)
+            round(self.wheelTrackWidth * scaleFactor / pixelSize)
         )
         treadWidth = max(1, round(2.0 * scaleFactor / pixelSize))
 
-        for wheelIndex, track in enumerate(cls.wheelTrackPoints):
+        for wheelIndex, track in enumerate(self.wheelTrackPoints):
             side = -1.0 if wheelIndex % 2 == 0 else 1.0
             trackPoints = list(track)
             for startPoint, endPoint in zip(
                 trackPoints,
                 trackPoints[1:]
             ):
-                age = max(0.0, cls.simulationTime - endPoint[4])
-                fade = max(0.0, 1.0 - age / cls.wheelTrackLifetime)
-                alpha = round(255.0 * cls.wheelTrackOpacity * fade)
+                age = max(0.0, self.simulationTime - endPoint[4])
+                fade = max(0.0, 1.0 - age / self.wheelTrackLifetime)
+                alpha = round(255.0 * self.wheelTrackOpacity * fade)
                 if alpha == 0:
                     continue
 
@@ -270,7 +306,7 @@ class Rover:
                 ):
                     continue
 
-                sideOffsetAmount = cls.wheelTrackSideOffset
+                sideOffsetAmount = self.wheelTrackSideOffset
                 sideOffset = sideOffsetAmount / scaleFactor * side
                 startCenter = (
                     startX + math.cos(startHeading) * sideOffset,
@@ -280,9 +316,9 @@ class Rover:
                     endX + math.cos(endHeading) * sideOffset,
                     endY + math.sin(endHeading) * sideOffset
                 )
-                color = (*cls.wheelTrackColor[:3], alpha)
+                color = (*self.wheelTrackColor[:3], alpha)
                 pg.draw.line(
-                    cls._wheelTrackSurface,
+                    self._wheelTrackSurface,
                     color,
                     toPixel(startCenter),
                     toPixel(endCenter),
@@ -290,11 +326,11 @@ class Rover:
                 )
 
                 if sampleIndex % 3 == 0:
-                    treadHalfWidth = cls.wheelTrackWidth * 0.45
+                    treadHalfWidth = self.wheelTrackWidth * 0.45
                     acrossX = math.cos(endHeading) * treadHalfWidth
                     acrossY = math.sin(endHeading) * treadHalfWidth
                     pg.draw.line(
-                        cls._wheelTrackSurface,
+                        self._wheelTrackSurface,
                         color,
                         toPixel((
                             endCenter[0] - acrossX,
@@ -308,89 +344,88 @@ class Rover:
                     )
 
         pg.transform.scale(
-            cls._wheelTrackSurface,
+            self._wheelTrackSurface,
             screenSize,
-            cls._scaledWheelTrackSurface
+            self._scaledWheelTrackSurface
         )
         screen.blit(
-            cls._scaledWheelTrackSurface,
+            self._scaledWheelTrackSurface,
             (-round(cameraRemainderX), round(cameraRemainderY)),
             special_flags=pg.BLEND_ALPHA_SDL2
         )
 
-    @classmethod
-    def update(cls, deltaTime=1.0 / 60.0):
-        if cls.gameOver:
+    def update(self, deltaTime=1.0 / 60.0, controlsEnabled=True):
+        if self.gameOver:
             return
         deltaTime = min(max(deltaTime, 0.0), 1.0 / 30.0)
-        cls.simulationTime += deltaTime
+        self.simulationTime += deltaTime
 
-        if cls.systemsOn:
+        if self.systemsOn and controlsEnabled:
             keys = pg.key.get_pressed()
             throttle = float(keys[pg.K_w]) - float(keys[pg.K_s])
             steer = (
                 float(keys[pg.K_a]) - float(keys[pg.K_d])
-                if cls.charge > 0.0
+                if self.charge > 0.0
                 else 0.0
             )
         else:
             throttle = 0.0
             steer = 0.0
-        directionAxes = cls._getDirectionAxes()
-        wheelPositions = cls._getWheelPositions(directionAxes)
+        directionAxes = self._getDirectionAxes()
+        wheelPositions = self._getWheelPositions(directionAxes)
         frontLeft, frontRight, rearLeft, rearRight = (
             Chunk.terrainHeight(*position)
             for position in wheelPositions
         )
         frontGrade = (
             frontLeft + frontRight - rearLeft - rearRight
-        ) / (2.0 * cls.wheelbase)
+        ) / (2.0 * self.wheelbase)
         sideGrade = (
             frontRight + rearRight - frontLeft - rearLeft
-        ) / (2.0 * cls.trackWidth)
+        ) / (2.0 * self.trackWidth)
         roughness = min(1.0, (abs(frontGrade) + abs(sideGrade)) * 180.0)
 
-        groundHeight = Chunk.terrainPixelHeight(cls.coords[0], cls.coords[1])
+        groundHeight = Chunk.terrainPixelHeight(self.coords[0], self.coords[1])
         colorIndex = Chunk.terrainColorIndexFromHeight(groundHeight)
-        if cls.previousGroundHeight is not None:
+        if self.previousGroundHeight is not None:
             colorRise = max(
                 0,
                 colorIndex - Chunk.terrainColorIndexFromHeight(
-                    cls.previousGroundHeight
+                    self.previousGroundHeight
                 )
             )
-            heightChange = abs(groundHeight - cls.previousGroundHeight)
+            heightChange = abs(groundHeight - self.previousGroundHeight)
         else:
             colorRise = 0
             heightChange = 0.0
-        cls.previousGroundHeight = groundHeight
+        self.previousGroundHeight = groundHeight
         bump = min(1.0, max(0.0, heightChange * 18.0 - 0.04))
         uphillTarget = min(0.35, colorRise * 0.22)
-        cls.uphillLoad = max(
+        self.uphillLoad = max(
             uphillTarget,
-            cls.uphillLoad * math.exp(-2.8 * deltaTime)
+            self.uphillLoad * math.exp(-2.8 * deltaTime)
         )
 
         driveGrip = max(
             0.35,
-            1.0 - roughness * 0.55 - bump * 0.15 - cls.uphillLoad * 0.2
+            1.0 - roughness * 0.55 - bump * 0.15 - self.uphillLoad * 0.2
         )
         surfaceTemperature = EnvironmentManager.surfaceTemperatureC
         engineAmbientTemperature = max(
-            cls.engineMinimumTemperatureC,
+            self.engineMinimumTemperatureC,
             surfaceTemperature
         )
-        cls.engineTemperatureC += (
-            engineAmbientTemperature - cls.engineTemperatureC
-        ) * (1.0 - math.exp(-cls.engineCoolingRate * deltaTime))
+        self.engineTemperatureC += (
+            engineAmbientTemperature - self.engineTemperatureC
+        ) * (1.0 - math.exp(-self.engineCoolingRate * deltaTime))
         coldPowerLoss = max(
             0.0,
-            cls.engineColdTemperatureC - cls.engineTemperatureC
-        ) * cls.engineColdPowerScale
+            self.engineColdTemperatureC - self.engineTemperatureC
+        ) * self.engineColdPowerScale
         overheatPowerLoss = max(
             0.0,
-            cls.engineTemperatureC - cls.engineOverheatTemperatureC
-        ) * cls.engineOverheatPowerScale
+            self.engineTemperatureC - self.engineOverheatTemperatureC
+        ) * self.engineOverheatPowerScale
         enginePower = max(0.4, 1.0 - coldPowerLoss - overheatPowerLoss)
         surfaceGrip = max(
             0.6,
@@ -399,24 +434,22 @@ class Rover:
             - EnvironmentManager.stormIntensity * 0.1
         )
         driveGrip *= surfaceGrip
-        if throttle != 0.0 and cls.velocity * throttle < 0.0:
-            cls._applyDeceleration(cls.braking * driveGrip * deltaTime)
-        elif throttle != 0.0 and cls.charge > 0.0:
-            powerScale = cls.powerPercent / 100.0
-            cls.velocity += (
-                throttle
-                * cls.acceleration
-                * powerScale
-                * enginePower
-                * driveGrip
-                * deltaTime
+        driveTime = deltaTime
+        if throttle != 0.0 and self.velocity * throttle < 0.0:
+            stopTime = abs(self.velocity) / (self.braking * driveGrip)
+            self._applyDeceleration(self.braking * driveGrip * deltaTime)
+            driveTime = max(0.0, deltaTime - stopTime)
+        if throttle != 0.0 and self.charge > 0.0:
+            powerScale = self.powerPercent / 100.0
+            self.velocity += (
+                throttle * self.acceleration * powerScale * enginePower * driveGrip * driveTime
             )
-            cls.engineTemperatureC = min(
-                cls.engineMaximumTemperatureC,
+            self.engineTemperatureC = min(
+                self.engineMaximumTemperatureC,
                 max(
-                    cls.engineMinimumTemperatureC,
-                    cls.engineTemperatureC
-                    + cls.engineHeatingRate
+                    self.engineMinimumTemperatureC,
+                    self.engineTemperatureC
+                    + self.engineHeatingRate
                     * abs(throttle)
                     * powerScale
                     * deltaTime
@@ -424,21 +457,21 @@ class Rover:
             )
             chargeDrainMultiplier = (
                 1.0
-                + EnvironmentManager.nightBlend * cls.nightEnergyMultiplier
+                + EnvironmentManager.nightBlend * self.nightEnergyMultiplier
                 + max(0.0, -30.0 - surfaceTemperature)
-                * cls.coldEnergyMultiplier
+                * self.coldEnergyMultiplier
                 + EnvironmentManager.stormIntensity
-                * cls.stormEnergyMultiplier
+                * self.stormEnergyMultiplier
             ) * (
                 1.0
                 + max(
                     0.0,
-                    cls.engineTemperatureC - cls.engineOverheatTemperatureC
-                ) * cls.engineOverheatPowerScale
+                    self.engineTemperatureC - self.engineOverheatTemperatureC
+                ) * self.engineOverheatPowerScale
             )
-            cls.charge = max(
+            self.charge = max(
                 0.0,
-                cls.charge
+                self.charge
                 - abs(throttle)
                 * powerScale
                 * chargeDrainMultiplier
@@ -446,79 +479,79 @@ class Rover:
             )
         else:
             resistance = (
-                cls.rollingResistance
-                + abs(cls.velocity) * 0.04
+                self.rollingResistance
+                + abs(self.velocity) * 0.04
                 + roughness * 20.0
             )
-            cls._applyDeceleration(resistance * deltaTime)
+            self._applyDeceleration(resistance * deltaTime)
 
-        if cls.energyLeakTimeRemaining > 0.0:
-            cls.energyLeakTimeRemaining = max(
+        if self.energyLeakTimeRemaining > 0.0:
+            self.energyLeakTimeRemaining = max(
                 0.0,
-                cls.energyLeakTimeRemaining - deltaTime
+                self.energyLeakTimeRemaining - deltaTime
             )
-            cls.energyLeakActive = cls.energyLeakTimeRemaining > 0.0
+            self.energyLeakActive = self.energyLeakTimeRemaining > 0.0
         else:
             coldExposure = max(
                 0.0,
                 min(
                     1.0,
-                    (cls.energyLeakTemperatureC - cls.engineTemperatureC)
-                    / cls.energyLeakTemperatureRangeC
+                    (self.energyLeakTemperatureC - self.engineTemperatureC)
+                    / self.energyLeakTemperatureRangeC
                 )
             )
-            if cls.engineTemperatureC < cls.energyLeakTemperatureC:
+            if self.engineTemperatureC < self.energyLeakTemperatureC:
                 coldExposure = 0.5 + coldExposure * 0.5
             leakChance = 1.0 - math.exp(
-                -cls.energyLeakEventRate
+                -self.energyLeakEventRate
                 * EnvironmentManager.nightBlend
                 * coldExposure
                 * deltaTime
             )
-            cls.energyLeakActive = random.random() < leakChance
-            if cls.energyLeakActive:
-                cls.energyLeakTimeRemaining = cls.energyLeakDuration
-        if cls.energyLeakActive:
-            cls.charge = max(
+            self.energyLeakActive = random.random() < leakChance
+            if self.energyLeakActive:
+                self.energyLeakTimeRemaining = self.energyLeakDuration
+        if self.energyLeakActive:
+            self.charge = max(
                 0.0,
-                cls.charge - cls.energyLeakDrainRate * deltaTime
+                self.charge - self.energyLeakDrainRate * deltaTime
             )
-        if cls.charge <= 0.0:
-            cls.gameOver = True
+        if self.charge <= 0.0:
+            self.gameOver = True
 
-        cls.velocity -= (
-            frontGrade * cls.terrainAccelerationScale * deltaTime
+        self.velocity -= (
+            frontGrade * self.terrainAccelerationScale * deltaTime
         )
-        cls._applyDeceleration(cls.uphillLoad * 35.0 * deltaTime)
-        cls._applyDeceleration(bump * 18.0 * deltaTime)
-        cls.velocity = max(
-            cls.maxReverseSpeed,
-            min(cls.velocity, cls.maxSpeed)
+        self._applyDeceleration(self.uphillLoad * 35.0 * deltaTime)
+        self._applyDeceleration(bump * 18.0 * deltaTime)
+        self.velocity = max(
+            self.maxReverseSpeed,
+            min(self.velocity, self.maxSpeed)
         )
 
         speedLimit = (
-            cls.maxSpeed
-            if cls.velocity >= 0.0
-            else abs(cls.maxReverseSpeed)
+            self.maxSpeed
+            if self.velocity >= 0.0
+            else abs(self.maxReverseSpeed)
         )
-        speedRatio = min(1.0, abs(cls.velocity) / speedLimit)
+        speedRatio = min(1.0, abs(self.velocity) / speedLimit)
         steeringWobble = (
-            0.65 * math.sin(cls.simulationTime * 6.0)
-            + 0.35 * math.sin(cls.simulationTime * 11.5 + 1.2)
+            0.65 * math.sin(self.simulationTime * 6.0)
+            + 0.35 * math.sin(self.simulationTime * 11.5 + 1.2)
         )
         wobbleAmplitude = (
-            5.0 + cls.uphillLoad * 15.0
+            5.0 + self.uphillLoad * 15.0
         ) * speedRatio * (0.6 + roughness * 0.4)
-        cls.wheelSteeringInputAngle += (
-            cls.wheelSteeringLimit * steer - cls.wheelSteeringInputAngle
-        ) * (1.0 - math.exp(-cls.wheelSteeringResponse * deltaTime))
-        cls.wheelSteeringWobbleAngle = steeringWobble * wobbleAmplitude
+        self.wheelSteeringInputAngle += (
+            self.wheelSteeringLimit * steer - self.wheelSteeringInputAngle
+        ) * (1.0 - math.exp(-self.wheelSteeringResponse * deltaTime))
+        self.wheelSteeringWobbleAngle = steeringWobble * wobbleAmplitude
         steeringAngle = math.radians(
-            cls.maxSteeringAngle * steer + cls.wheelSteeringWobbleAngle
+            self.maxSteeringAngle * steer + self.wheelSteeringWobbleAngle
         )
         turnGrip = max(0.25, 1.0 - roughness * 0.65)
         yawRate = (
-            cls.velocity / cls.wheelbase * math.tan(steeringAngle) * turnGrip
+            self.velocity / self.wheelbase * math.tan(steeringAngle) * turnGrip
         ) if speedRatio > 0.01 else 0.0
 
         slip = min(
@@ -526,155 +559,149 @@ class Rover:
             0.05 + roughness * 0.55 + speedRatio * 0.1 + bump * 0.15
         )
         sideAcceleration = (
-            yawRate * cls.velocity * slip
-            - sideGrade * cls.terrainAccelerationScale
+            yawRate * self.velocity * slip
+            - sideGrade * self.terrainAccelerationScale
         )
-        cls.lateralVelocity += sideAcceleration * deltaTime
+        self.lateralVelocity += sideAcceleration * deltaTime
         lateralDamping = 4.5 * (1.0 - roughness * 0.8) + 0.4
-        cls.lateralVelocity *= math.exp(-lateralDamping * deltaTime)
-        lateralLimit = max(12.0, abs(cls.velocity) * 0.45)
-        cls.lateralVelocity = max(
+        self.lateralVelocity *= math.exp(-lateralDamping * deltaTime)
+        lateralLimit = max(12.0, abs(self.velocity) * 0.45)
+        self.lateralVelocity = max(
             -lateralLimit,
-            min(cls.lateralVelocity, lateralLimit)
+            min(self.lateralVelocity, lateralLimit)
         )
         forwardX, forwardY, rightX, rightY = directionAxes
-        cls.rotation = (
-            cls.rotation + math.degrees(yawRate * deltaTime) + 180.0
+        self.rotation = (
+            self.rotation + math.degrees(yawRate * deltaTime) + 180.0
         ) % 360.0 - 180.0
         nextCoords = (
-            cls.coords[0] + (
-                forwardX * cls.velocity + rightX * cls.lateralVelocity
+            self.coords[0] + (
+                forwardX * self.velocity + rightX * self.lateralVelocity
             ) * deltaTime,
-            cls.coords[1] + (
-                forwardY * cls.velocity + rightY * cls.lateralVelocity
+            self.coords[1] + (
+                forwardY * self.velocity + rightY * self.lateralVelocity
             ) * deltaTime
         )
         roverBoundingBox = BoundingBox(
             nextCoords,
-            cls.texture.get_width() * cls.scale * 0.8,
-            cls.texture.get_height() * cls.scale * 0.8,
-            cls.rotation
+            self.texture.get_width() * self.scale * 0.8,
+            self.texture.get_height() * self.scale * 0.8,
+            self.rotation
         )
         collidedBox = next(
             (
                 boundingBox
-                for boundingBox in cls.boundingBoxes
+                for boundingBox in self.boundingBoxes
                 if boundingBox.intersects(roverBoundingBox)
             ),
             None
         )
         if collidedBox is not None:
-            movementX = nextCoords[0] - cls.coords[0]
-            movementY = nextCoords[1] - cls.coords[1]
+            movementX = nextCoords[0] - self.coords[0]
+            movementY = nextCoords[1] - self.coords[1]
             movementLength = math.hypot(movementX, movementY)
             if movementLength > 0.0:
                 recoilX = -movementX / movementLength
                 recoilY = -movementY / movementLength
             else:
-                recoilX = cls.coords[0] - collidedBox.coords[0]
-                recoilY = cls.coords[1] - collidedBox.coords[1]
+                recoilX = self.coords[0] - collidedBox.coords[0]
+                recoilY = self.coords[1] - collidedBox.coords[1]
                 recoilLength = math.hypot(recoilX, recoilY)
                 if recoilLength == 0.0:
-                    forwardX, forwardY, _, _ = cls._getDirectionAxes()
+                    forwardX, forwardY, _, _ = self._getDirectionAxes()
                     recoilX = -forwardX
                     recoilY = -forwardY
                 else:
                     recoilX /= recoilLength
                     recoilY /= recoilLength
 
-            cls.coords[0] += recoilX * 4.0
-            cls.coords[1] += recoilY * 4.0
-            cls.velocity = 0.0
-            cls.lateralVelocity = 0.0
+            self.coords[0] += recoilX * 4.0
+            self.coords[1] += recoilY * 4.0
+            self.velocity = 0.0
+            self.lateralVelocity = 0.0
         else:
-            cls.coords[0], cls.coords[1] = nextCoords
-        if math.hypot(cls.velocity, cls.lateralVelocity) <= (
-            cls.stationarySpeedThreshold
+            self.coords[0], self.coords[1] = nextCoords
+        if math.hypot(self.velocity, self.lateralVelocity) <= (
+            self.stationarySpeedThreshold
         ):
-            cls.stationaryTime += deltaTime
+            self.stationaryTime += deltaTime
         else:
-            cls.stationaryTime = 0.0
-        cls.isCharging = (
-            not cls.gameOver
+            self.stationaryTime = 0.0
+        self.isCharging = (
+            not self.gameOver
             and EnvironmentManager.nightBlend < 0.5
-            and cls.stationaryTime >= cls.stationaryRechargeDelay
-            and cls.charge < 100.0
+            and self.stationaryTime >= self.stationaryRechargeDelay
+            and self.charge < 100.0
         )
-        if cls.isCharging:
-            cls.charge = min(
+        if self.isCharging:
+            self.charge = min(
                 100.0,
-                cls.charge + cls.stationaryRechargeRate * deltaTime
+                self.charge + self.stationaryRechargeRate * deltaTime
             )
-        cls._updateWheelTracks()
+        self._updateWheelTracks()
 
-    @classmethod
-    def render(cls, screen, offset=(0.0, 0.0)):
+    def render(self, screen, offset=(0.0, 0.0)):
         screenSize = screen.get_size()
-        center = Texture.worldToScreen(cls.coords, screenSize, offset)
-        renderScale = cls.scale * Texture.getScaleFactor(screenSize)
-        cls._renderWheelTracks(screen, offset, screenSize)
+        center = Texture.worldToScreen(self.coords, screenSize, offset)
+        renderScale = self.scale * Texture.getScaleFactor(screenSize)
+        self._renderWheelTracks(screen, offset, screenSize)
 
-        if cls._cachedWheelsRenderScale != renderScale:
-            cls._cachedWheelsRenderScale = renderScale
-            cls._cachedScaledWheels = pg.transform.scale_by(
-                cls.wheelsTexture,
+        if self._cachedWheelsRenderScale != renderScale:
+            self._cachedWheelsRenderScale = renderScale
+            self._cachedScaledWheels = pg.transform.scale_by(
+                self.wheelsTexture,
                 renderScale
             )
 
         wheels = pg.transform.rotate(
-            cls._cachedScaledWheels,
-            cls.rotation
-            + cls.wheelSteeringInputAngle
-            + cls.wheelSteeringWobbleAngle
+            self._cachedScaledWheels,
+            self.rotation
+            + self.wheelSteeringInputAngle
+            + self.wheelSteeringWobbleAngle
         )
-        heading = math.radians(cls.rotation)
-        wheelOffset = cls.wheelOffset * renderScale
+        heading = math.radians(self.rotation)
+        wheelOffset = self.wheelOffset * renderScale
         wheelCenter = (
             center[0] - math.sin(heading) * wheelOffset,
             center[1] - math.cos(heading) * wheelOffset
         )
         screen.blit(wheels, wheels.get_rect(center=wheelCenter))
-        Texture.render(cls, screen, offset)
+        Texture.render(self, screen, offset)
 
-    @classmethod
-    def renderHud(cls, screen):
-        condition = 'NIGHT' if EnvironmentManager.nightBlend >= 0.5 else 'DAY'
+    def renderHud(self, screen):
+        condition = 'NIGHT' if EnvironmentManager.nightBlend >= 0.5 else 'DAYLIGHT'
         if EnvironmentManager.stormIntensity > 0.05:
             condition += ' / STORM'
-        localHour = int(EnvironmentManager.displayedLocalTimeHour)
-        localMinute = int(
-            (EnvironmentManager.displayedLocalTimeHour - localHour) * 60.0
-        )
         labels = (
-            f'CHARGE {cls.charge:3.0f}%',
-            f'POWER {cls.powerPercent:3.0f}%',
-            f'ENGINE {cls.engineTemperatureC:+.0f}°C',
+            f'CHARGE {self.charge:3.0f}%',
+            f'POWER {self.powerPercent:3.0f}%',
+            f'ENGINE {self.engineTemperatureC:+.0f}°C',
             f'SURFACE {EnvironmentManager.surfaceTemperatureC:+.0f}°C',
             condition
         )
-        if cls.isCharging:
+        if self.isCharging:
             labels += ('CHARGING',)
-        lineHeight = cls.hudFont.get_linesize() + 6
+        lineHeight = self.hudFont.get_linesize() + 6
         for lineIndex, label in enumerate(labels):
-            text = cls.hudFont.render(label, True, (255, 255, 255))
-            screen.blit(text, (24, 20 + lineIndex * lineHeight))
+            text = self.hudFont.render(label, True, (255, 255, 255))
+            screen.blit(text, (24, 90 + lineIndex * lineHeight))
         messages = []
         if EnvironmentManager.solarFlareActive:
             messages.append('DANGER: SOLAR FLARE')
         if EnvironmentManager.stormIntensity > 0.05:
             messages.append('WARNING: SANDSTORM')
-        if cls.engineTemperatureC >= cls.engineOverheatTemperatureC:
+        if self.engineTemperatureC >= self.engineOverheatTemperatureC:
             messages.append('WARNING: ENGINE OVERHEATING')
-        if cls.energyLeakActive:
+        if self.energyLeakActive:
             messages.append('WARNING: ENERGY LEAK')
-        if cls.charge <= 20.0:
+        if self.charge <= 20.0:
             messages.append('WARNING: LOW CHARGE')
-        messageY = 20 + len(labels) * lineHeight
+        messageY = 90 + len(labels) * lineHeight
         for messageIndex, message in enumerate(messages):
-            text = cls.hudFont.render(message, True, (255, 48, 48))
+            text = self.hudFont.render(message, True, (255, 48, 48))
             screen.blit(text, (24, messageY + messageIndex * lineHeight))
-        timeLabel = cls.hudFont.render(
-            f'{localHour:02d}:{localMinute:02d} LMST',
+        timeLabel = self.hudFont.render(
+            EnvironmentManager.clockLabel(),
             True,
             (255, 255, 255)
         )
@@ -683,22 +710,20 @@ class Rover:
             timeLabel.get_rect(topright=(screen.get_width() - 24, 20))
         )
 
-    @classmethod
-    def renderSystemsButton(cls, screen):
-        label = '[on]' if cls.systemsOn else '[off]'
-        color = (80, 255, 110) if cls.systemsOn else (255, 70, 70)
-        text = cls.hudFont.render(label, True, color)
+    def renderSystemsButton(self, screen):
+        label = '[on]' if self.systemsOn else '[off]'
+        color = (80, 255, 110) if self.systemsOn else (255, 70, 70)
+        text = self.hudFont.render(label, True, color)
         textRect = text.get_rect(
             bottomright=(screen.get_width() - 24, screen.get_height() - 24)
         )
-        cls.systemsButtonRect = textRect.inflate(24, 16)
-        pg.draw.rect(screen, color, cls.systemsButtonRect, 2)
+        self.systemsButtonRect = textRect.inflate(24, 16)
+        pg.draw.rect(screen, color, self.systemsButtonRect, 2)
         screen.blit(text, textRect)
 
-    @classmethod
-    def renderGameOver(cls, screen):
+    def renderGameOver(self, screen):
         if (pg.time.get_ticks() // 500) % 2 == 0:
-            text = cls.hudFont.render(
+            text = self.hudFont.render(
                 '[SIGNAL LOST]',
                 True,
                 (255, 48, 48)
