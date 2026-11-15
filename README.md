@@ -4,7 +4,7 @@ Exploring Valles Marineris
 
 A survival and exploration adventure for ages 7–12, created for the NASA International Space Apps Challenge.
 
-You are an astronaut at a research base in Valles Marineris on Mars. Your rover is out in the canyon, your provisions are limited, and you have **20 real-time minutes of oxygen**. From the control room, you guide the rover to research sites to collect virtual rock samples and investigate the geology of the canyon. Complete **eight scientific missions** before your supplies run out to trigger your rescue and return home.
+You are an astronaut at a research base in Valles Marineris on Mars. Your rover is out in the canyon, your provisions are limited, and you have **30 real-time minutes of oxygen**. From the control room, you guide the rover to research sites to collect virtual rock samples and investigate the geology of the canyon. Complete **eight scientific missions** before your supplies run out to trigger your rescue and return home.
 
 ## Getting started
 
@@ -25,9 +25,9 @@ The blue square on the map marks the base, and the green arrow shows the rover. 
 
 ## Solar power and rover hazards
 
-A **sol** is approximately 24 hours and 40 minutes on Mars. In the game, one sol lasts **10 real-time minutes**. During the **light day**, the sunlit part of a sol, solar panels power the rover. Stop for at least three seconds during the light day to recharge its battery. At night the rover relies on stored charge.
+A **sol** is approximately 24 hours and 40 minutes on Mars. In the game, one sol lasts **10 real-time minutes**. During **daylight**, the sunlit part of a sol, solar panels power the rover. Stop for at least three seconds during daylight to recharge its battery. At night the rover relies on stored charge.
 
-Use the mouse wheel to adjust drive power from **0% to 200%**. Watch the battery as conditions change. Cold nights can cause temporary energy leaks, overheating affects performance, and dust storms reduce the sunlight available for charging. During a solar flare, interference builds until the rover loses its signal. Click the systems switch in the lower-right corner to turn the rover off before that happens. Driving resumes when you switch the systems back on.
+Use the mouse wheel to adjust drive power from **0% to 200%**. Watch the battery as conditions change. Cold nights can cause temporary energy leaks, overheating affects performance, and dust storms increase energy costs and reduce traction. During a solar flare, interference builds until the rover loses its signal. Click the systems switch in the lower-right corner to turn the rover off before that happens. Driving resumes when you switch the systems back on.
 
 ## Life at the base
 
@@ -41,25 +41,25 @@ Sleeping skips the night. The skipped hours still use oxygen and provisions at t
 
 ### From ice to drinking water and provisions
 
-1. Drive to the underground ice extraction site. Press **E** to operate the rover’s extraction equipment and recover ice from beneath the Martian surface. The rover can carry up to five units of ice.
+1. Complete the two research steps in **Mission 5** to discover underground ice. Then press **E** at the same site to extract ice from beneath the Martian surface. The rover can carry up to five units of ice.
 2. Drive the rover back to the outside of the base and press **E** to unload. The ice is melted at the base, making water available to the astronaut. Returning to the control room with **Esc** leaves the cargo on the rover.
-3. Keep water for drinking or use it in the greenhouse. The base grows **dwarf red radishes** in hydroponic beds, where water carries nutrients to the roots. Their compact size suits the small growing area.
+3. Use the delivered water in the greenhouse. The base grows **dwarf red radishes** in hydroponic beds, where water carries nutrients to the roots. Their compact size suits the small growing area.
 4. In the prototype, tending and harvesting the radishes take one interaction. One unit of water restores 30 percentage points of provisions, up to 100%. When provisions are full, the water stays in your inventory.
 
 ### Experimental power at the base
 
-The base design draws inspiration from a 2018 drop-tower study in which researchers used light to produce hydrogen under brief conditions of microgravity. The game imagines a base that uses solar electricity during the light day to split water into hydrogen and oxygen. At night, a fuel cell recombines the stored gases to generate electricity and produce water. Oxygen stored for power generation stays in that system. The astronaut has a separate, limited breathing supply. [Read the 2018 study in *Nature Communications*.](https://www.nature.com/articles/s41467-018-04844-y)
+The base design draws inspiration from a 2018 drop-tower study in which researchers used light to produce hydrogen under brief conditions of microgravity. The game imagines a base that uses solar electricity during daylight to split water into hydrogen and oxygen. At night, a fuel cell recombines the stored gases to generate electricity and produce water. This hydrogen/fuel-cell system is a narrative concept, not an implemented resource-conversion mechanic. Oxygen stored for power generation stays in that imagined system. The astronaut has a separate, limited breathing supply. [Read the 2018 study in *Nature Communications*.](https://www.nature.com/articles/s41467-018-04844-y)
 
 ## Controls
 
 | Input | Action |
 |---|---|
-| **WASD** or **arrow keys** | Walk around the base. |
-| **E** | Interact with the nearby computer, bed, growing bed, underground ice extraction site, unloading point, or mission objective. |
+| **WASD** or **arrow keys** | Walk around the base. In rover mode, **W/S** drive and **A/D** steer. While the manipulator is deployed, **WASD** moves its gripper instead. |
+| **E** | Interact with the nearby computer, bed, growing bed, underground ice extraction site, unloading point, or mission objective. With the manipulator active, grab the sample or store it in the tray. |
 | **M** | Open or close the rover map. |
 | **Mouse wheel** | Adjust rover drive power. |
 | **On/off switch** | Toggle rover systems. Switch off for protection during a solar flare. |
-| **Esc** | Close the map first. From rover control, return to the computer. At the base, open the menu. |
+| **Esc** | Cancel the manipulator if active; otherwise close the map first. From rover control, return to the computer. At the base, open the menu. |
 | **Up/Down** or **Tab**, then **Enter** or **Space** | Select and confirm a menu option. The menu also supports the mouse. |
 | **Enter** on the result screen | Begin a new attempt with fresh supplies and mission progress. |
 
@@ -69,7 +69,7 @@ The upper-right display tracks oxygen, provisions, and water. A full stock of pr
 
 Finishing all eight missions triggers evacuation. Running out of oxygen or provisions, draining the rover battery, or losing the signal to an unprotected solar flare ends the attempt.
 
-Switching between the base and rover preserves their state during the session. Only the rover’s position carries over between launches. It is written to `saves/rover.json` every five seconds of simulated movement, when you return to the base, and when you close the game. Supplies, inventory, and mission progress last for the current run. **Load** and **Settings** are placeholders.
+Switching between the base and rover preserves their state during the current attempt. There are **no disk saves**: each new launch starts fresh with the rover near the base, full supplies, and no completed missions. Old save files are ignored. The sol clock and weather continue while the astronaut is at the base, even before the first rover session. **Load** and **Settings** remain placeholders.
 
 ## NASA data and resources
 
@@ -98,15 +98,15 @@ Open the rover map with **M** to see eight numbered research sites and their pro
 
 | # | Mission | Location | How to complete it |
 |---|---|---|---|
-| 1 | **The Ancient Water Mystery** | Hebes / Candor Chasma | Press **E** to collect a layered rock sample, then again to measure its mineral composition. Return the rover to the outside of the base. Press **Esc**, approach the control-room computer, and press **E** to analyze the returned sample. This final analysis completes the mission; another **E** resumes rover control. |
+| 1 | **The Ancient Water Mystery** | Hebes / Candor Chasma | Press **E** at the site to deploy the manipulator. Move the gripper to the sample with **WASD** and press **E** to grab it. Move to the left **TRAY** and press **E** to store the sample; only then is collection credited. **Esc** cancels without awarding the sample. Rover driving is disabled while the arm is active. After storage, press **E** to measure mineral composition. Return the rover to the outside of the base. Press **Esc**, approach the control-room computer, and press **E** to analyze the returned sample. This final analysis completes the mission; another **E** resumes rover control. |
 | 2 | **The Great Landslide** | Ius Chasma | Press **E** to map the debris, then again to inspect exposed rock layers. The observations help reconstruct how the landslide changed the canyon. |
 | 3 | **The Mysterious Dark Streaks** | Melas / Coprates Chasma | Press **E** to compare seasonal images, then again to take a remote measurement. The cause of these streaks remains debated: salts and dry flows are possible explanations, and liquid water is not confirmed. |
 | 4 | **The Geological Archive** | Hebes Chasma | Press **E** to photograph the rock layers, then again to compare their sequence and reconstruct the relative order of geological events. |
 | 5 | **The Lost Underground Reservoir** | Eastern Valles Marineris | Press **E** to map collapsed terrain, then again to scan and discover underground ice. Completing these steps unlocks ice extraction at the same site. Subsequent **E** presses collect ice into the rover, up to five units. Return to the outside of the base and press **E** to unload and melt it: one unit of ice becomes one unit of water in the base inventory. The accessible deposit is a fictional gameplay resource. |
 | 6 | **The Planetary Fracture** | Noctis Labyrinthus | Press **E** to map fractures, then again to measure an elevation profile. These observations introduce tectonics and the influence of the Tharsis uplift. |
-| 7 | **The Impossible Route** | Canyon-floor route | Visit three waypoints in order. Press **E** at the first to check slope, at the second to check traction, and at the third to complete the route. Marker **7** moves to the next waypoint after each step. |
+| 7 | **The Impossible Route** | Canyon-floor route | Drive the extended route through **five ordered waypoints**: enter the field, pass the first rock gate, navigate the middle section, clear the final gate, and finish. **Nine solid rocks** have collision boundaries and gaps wide enough to drive between them. Steer through the openings and press **E** at each waypoint. Marker **7** advances after each checkpoint; the map shows the complete route. Collisions check movement and rotation in small steps and allow sliding along rock faces. |
 | 8 | **The Canyon Research Station** | Base plateau | First deliver at least one unit of ice and convert it to water at the base. Use water to tend the hydroponic beds at least once while provisions are below full. Then operate the rover near the outside of the base and press **E** to deploy the station. |
 
 ### Completion and rescue
 
-The mission counter tracks **0/8** through **8/8**. Completing all eight missions while survival reserves remain triggers the rescue ending automatically. Oxygen lasts **20 real-time minutes** and cannot currently be replenished. Exhausted oxygen or provisions ends the attempt; a flat rover battery or signal loss during an unprotected solar flare also causes failure. Press **Enter** on the result screen to begin a new attempt. Mission progress is kept only for the current run.
+The mission counter tracks **0/8** through **8/8**. Completing all eight missions while survival reserves remain triggers the rescue ending automatically. Oxygen lasts **30 real-time minutes** and cannot currently be replenished. Exhausted oxygen or provisions ends the attempt; a flat rover battery or signal loss during an unprotected solar flare also causes failure. Press **Enter** on the result screen to begin a new attempt. Mission progress is kept only for the current run.

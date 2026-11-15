@@ -1,6 +1,7 @@
 import math
 import pygame as pg
 from lib.AssetManager import AssetManager
+from lib.Survival import Survival
 from lib.Interface import Interface as UI
 
 
@@ -74,7 +75,7 @@ class MainMenu:
             UI.text(self.screen,subtitle,(rect.x+round(22*s),rect.y+round(43*s)),max(14,round(19*s)),UI.muted if enabled else '#607587')
             if active:UI.text(self.screen,'>',(rect.right-round(30*s),rect.y+round(23*s)),round(28*s),UI.accent)
         text('MARS SURFACE OPERATIONS',64,719,20,UI.muted)
-        text('20 MIN OXYGEN  /  8 RESEARCH MISSIONS',64,746,20,UI.cyan)
+        text(f'{int(Survival.oxygenDuration // 60)} MIN OXYGEN  /  8 RESEARCH MISSIONS',64,746,20,UI.cyan)
         text('ARROWS TO SELECT   /   ENTER TO CONFIRM',64,788,18,UI.muted)
         width,height=self.screen.get_size()
         pulse=120+round(60*math.sin(pg.time.get_ticks()/900))

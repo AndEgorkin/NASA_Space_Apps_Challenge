@@ -13,13 +13,19 @@ class SurvivalTests(unittest.TestCase):
         self.state = Survival()
         self.state.iceDiscovered = True
 
-    def testTwentyMinutesAndConstantFoodConsumption(self):
+    def testThirtyMinutesAndConstantFoodConsumption(self):
         self.state.update(600)
-        self.assertEqual(self.state.oxygen, 600)
+        self.assertEqual(self.state.oxygen, 1200)
         self.assertAlmostEqual(self.state.food,100/3)
         self.state.update(600)
-        self.assertEqual(self.state.oxygen,0)
+        self.assertEqual(self.state.oxygen,600)
         self.assertEqual(self.state.food,0)
+        self.state.food=100
+        self.state.update(599)
+        self.assertEqual(self.state.oxygen,1)
+        self.assertFalse(self.state.depleted)
+        self.state.update(1)
+        self.assertEqual(self.state.oxygen,0)
         self.assertTrue(self.state.depleted)
 
     def testWaterDeliveryAndFoodLoop(self):

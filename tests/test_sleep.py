@@ -46,14 +46,14 @@ class SleepTests(unittest.TestCase):
         self.assertAlmostEqual(EnvironmentManager.localTimeHour,9)
         self.assertEqual(EnvironmentManager.displayedLocalTimeHour,9)
         self.assertTrue(EnvironmentManager.isDay)
-        self.assertAlmostEqual(Main.survival.oxygen,1200-skipped)
+        self.assertAlmostEqual(Main.survival.oxygen,Survival.oxygenDuration-skipped)
         self.assertAlmostEqual(Main.survival.food,100-skipped*100/900)
         self.assertEqual(Main.base.room,'crew')
 
     def testDaytimeDoesNotSkipAndLowOxygenLoses(self):
         Main.sleepAtBase()
         self.assertEqual(EnvironmentManager.localTimeHour,12)
-        self.assertEqual(Main.survival.oxygen,1200)
+        self.assertEqual(Main.survival.oxygen,Survival.oxygenDuration)
         self.setHour(2);Main.survival.oxygen=1
         Main.sleepAtBase()
         self.assertEqual(Main.scene,'depleted')

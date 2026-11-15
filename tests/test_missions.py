@@ -59,7 +59,7 @@ class MissionTests(unittest.TestCase):
         self.assertEqual(self.missions.progress[6],len(self.missions.definitions[6][3]))
 
     def testOxygenExpiryWithoutCompletionLoses(self):
-        self.survival.update(1200)
+        self.survival.update(Survival.oxygenDuration)
         self.assertEqual(self.missions.ending(self.survival),'depleted')
 
     def testUndeliveredSampleDoesNotBlockRoverControl(self):

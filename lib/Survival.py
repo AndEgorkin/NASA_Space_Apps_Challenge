@@ -5,7 +5,7 @@ from lib.Interface import Interface as UI
 
 
 class Survival:
-    oxygenDuration = 20 * 60.0
+    oxygenDuration = 30 * 60.0
     foodDuration = 15 * 60.0
     cargoCapacity = 5
     interactionRadius = 280
