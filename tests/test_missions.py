@@ -30,7 +30,7 @@ class MissionTests(unittest.TestCase):
         self.assertEqual(self.missions.completed,7)
         self.pressAt(7)
         self.assertFalse(self.missions.allDone)
-        self.survival.roverAction(RoverMap.mapToWorld(RoverMap.canyonPixel))
+        self.survival.roverAction(RoverMap.mapToWorld(RoverMap.icePixel))
         self.survival.roverAction((0,0))
         self.survival.food=80
         self.survival.waterPlants()

@@ -10,7 +10,7 @@ from lib.TerrainManager import TerrainManager
 from objects.BoundingBox import BoundingBox
 from objects.Rover import Rover
 from objects.Texture import Texture
-from objects.WaterWell import WaterWell
+from objects.IceDeposit import IceDeposit
 
 
 class MarsSurface:
@@ -22,7 +22,7 @@ class MarsSurface:
         RoverSave.load(self.rover, RoverMap.spawnCoords)
         self.station = Texture('station', RoverMap.baseCoords, 30, 7.5,
                                AssetManager.get('assets.texture.station'), 50)
-        self.objects = [self.rover, self.station, WaterWell()]
+        self.objects = [self.rover, self.station, IceDeposit()]
         self._addStationCollisions()
         self._ensureSafeSpawn()
         self.camera = Camera(self.rover.coords)

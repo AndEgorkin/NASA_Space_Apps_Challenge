@@ -14,7 +14,8 @@ class Survival:
         self.oxygen = self.oxygenDuration
         self.food = 100.0
         self.water = 0
-        self.cargoWater = 0
+        self.cargoIce = 0
+        self.iceDiscovered = False
         self.deliveredWater = 0
         self.wateredPlants = 0
         self.message = ''
@@ -37,25 +38,27 @@ class Survival:
 
     def roverAction(self, coords):
         point = pg.Vector2(coords)
-        well = RoverMap.mapToWorld(RoverMap.canyonPixel)
-        if point.distance_to(well) <= self.interactionRadius:
-            if self.cargoWater >= self.cargoCapacity:
-                self.notify('Water cargo full. Return to base.')
+        deposit = RoverMap.mapToWorld(RoverMap.icePixel)
+        if point.distance_to(deposit) <= self.interactionRadius:
+            if not self.iceDiscovered:
+                self.notify('Complete Mission 5 to discover underground ice before extracting it.')
+            elif self.cargoIce >= self.cargoCapacity:
+                self.notify('Ice cargo full. Return to base.')
             else:
-                self.cargoWater += 1
-                self.notify('Water collected into rover cargo.')
+                self.cargoIce += 1
+                self.notify('Ice extracted into rover cargo. Deliver it to base for melting.')
         elif point.distance_to(RoverMap.baseCoords) <= RoverMap.baseInteractionRadius:
-            if self.cargoWater:
-                self.deliveredWater += self.cargoWater
-                self.water += self.cargoWater
-                self.cargoWater = 0
-                self.notify('Water delivered to base inventory.')
+            if self.cargoIce:
+                self.deliveredWater += self.cargoIce
+                self.water += self.cargoIce
+                self.cargoIce = 0
+                self.notify('Ice delivered and melted: water added to base inventory.')
             else:
-                self.notify('No water in rover cargo.')
+                self.notify('No ice in rover cargo.')
 
     def waterPlants(self):
         if self.water <= 0:
-            self.notify('No water: collect at the canyon and deliver to base.')
+            self.notify('No water: discover ice in Mission 5 and deliver it to base.')
         elif self.food >= 99.9:
             self.notify('Food reserves are full.')
         else:
@@ -66,10 +69,10 @@ class Survival:
 
     def roverHint(self, coords):
         point = pg.Vector2(coords)
-        if point.distance_to(RoverMap.mapToWorld(RoverMap.canyonPixel)) <= self.interactionRadius:
-            return 'E: collect water from well'
+        if point.distance_to(RoverMap.mapToWorld(RoverMap.icePixel)) <= self.interactionRadius:
+            return 'E: extract ice' if self.iceDiscovered else 'E: investigate underground ice (Mission 5)'
         if point.distance_to(RoverMap.baseCoords) <= RoverMap.baseInteractionRadius:
-            return 'E: unload water at base'
+            return 'E: unload and melt ice at base'
         return ''
 
     def render(self, screen, hint='', compact=False):
@@ -86,7 +89,7 @@ class Survival:
             bar=pg.Rect(x,y+22,174 if compact else 256,5)
             pg.draw.rect(screen,'#283c4c',bar,border_radius=2)
             pg.draw.rect(screen,color if fraction>0.2 else '#ef7566',(bar.x,bar.y,round(bar.w*fraction),bar.h),border_radius=2)
-        inventory=f'WATER  {self.water}     /     ROVER CARGO  {self.cargoWater}/{self.cargoCapacity}'
+        inventory=f'WATER  {self.water}     /     ROVER ICE  {self.cargoIce}/{self.cargoCapacity}'
         UI.text(screen,inventory,(panel.x+14,panel.y+(49 if compact else 108)),19,UI.muted)
         if hint:
             UI.text(screen,hint,(24,height-54),23,UI.accent)

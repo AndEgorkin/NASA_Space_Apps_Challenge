@@ -7,7 +7,7 @@ class RoverMap:
     imageSize = (768, 558)
     unitsPerPixel = 16.0
     basePixel = pg.Vector2(480, 365)
-    canyonPixel = pg.Vector2(280, 295)
+    icePixel = pg.Vector2(600, 280)
     baseCoords = (0.0, 0.0)
     spawnCoords = (0.0, -900.0)
     baseInteractionRadius = 850
@@ -67,10 +67,10 @@ class RoverMap:
         base = project(self.basePixel)
         pg.draw.rect(screen, '#7bdefb', (base.x-7,base.y-7,14,14))
         screen.blit(self.font.render('BASE', True, '#b5edff'), base + (12,-12))
-        canyon = project(self.canyonPixel)
-        pg.draw.circle(screen, '#68c9ed', canyon, 8)
-        waterLabel = self.font.render('Canyon with Water', True, '#a0e6ff')
-        screen.blit(waterLabel, canyon + (10, 10))
+        ice = project(self.icePixel)
+        pg.draw.circle(screen, '#68c9ed', ice, 8)
+        waterLabel = self.font.render('Ice deposit / Mission 5', True, '#a0e6ff')
+        screen.blit(waterLabel, ice + (-150, 16))
         if missions is not None:
             for i, definition in enumerate(missions.definitions):
                 marker = project(missions.target(i))

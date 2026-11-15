@@ -18,9 +18,9 @@ class Missions:
         ('The Geological Archive', 'Hebes Chasma', ((255,165),),
          ('Photograph rock layers', 'Compare the sequence of layers'),
          'Layer order reveals the relative sequence of geological events.'),
-        ('The Lost Underground Reservoir', 'Eastern Valles', ((600,280),),
-         ('Map collapsed terrain', 'Compare channel elevations'),
-         'Ancient channels suggest water release; a present-day reservoir is unconfirmed.'),
+        ('The Lost Underground Reservoir', 'Eastern Valles', (tuple(RoverMap.icePixel),),
+         ('Map collapsed terrain', 'Scan and discover underground ice'),
+         'Underground ice found in this fictional research site. Deliver it to base to make water.'),
         ('The Planetary Fracture', 'Noctis Labyrinthus', ((90,225),),
          ('Map the fractures', 'Measure an elevation profile'),
          'Fractures reveal clues to tectonics and the uplift of Tharsis.'),
@@ -86,6 +86,8 @@ class Missions:
         if index == 0 and self.progress[index] == len(self.definitions[index][3]):
             survival.notify('Sample ready. Press E at the base computer to analyse minerals.')
         elif self.done(index):
+            if index == 4:
+                survival.iceDiscovered = True
             survival.notify(f'Mission {index+1} complete. ' + self.definitions[index][4])
         else:
             survival.notify(f'Mission {index+1}: step complete. Press E for the next step.')
