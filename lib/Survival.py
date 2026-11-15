@@ -60,12 +60,12 @@ class Survival:
         if self.water <= 0:
             self.notify('No water: discover ice in Mission 5 and deliver it to base.')
         elif self.food >= 99.9:
-            self.notify('Food reserves are full.')
+            self.notify('Provision reserves are full.')
         else:
             self.wateredPlants += 1
             self.water -= 1
             self.food = min(100.0, self.food + 30)
-            self.notify('Plants watered: +30 food, -1 water.')
+            self.notify('Plants watered: +30 provisions, -1 water.')
 
     def roverHint(self, coords):
         point = pg.Vector2(coords)
@@ -81,7 +81,7 @@ class Survival:
         UI.panel(screen,panel)
         total = math.ceil(self.oxygen)
         rows = [('OXYGEN  %02d:%02d' % divmod(total,60),self.oxygen/self.oxygenDuration,UI.cyan),
-                (f'FOOD  {self.food:.0f}%',self.food/100,'#a4c879')]
+                (f'PROVISIONS  {self.food:.0f}%',self.food/100,'#a4c879')]
         for index,(label,fraction,color) in enumerate(rows):
             x=panel.x+14+(index*188 if compact else 0)
             y=panel.y+10+(0 if compact else index*43)

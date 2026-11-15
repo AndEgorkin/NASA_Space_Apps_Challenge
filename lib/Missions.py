@@ -29,7 +29,7 @@ class Missions:
          'Topography and traction constrain rover routes.'),
         ('The Canyon Research Station', 'Base plateau', ((480,365),),
          ('Deploy the station after delivering water and watering plants',),
-         'The station has water and food: the prototype life-support cycle is complete.')
+         'The station has water and provisions: the prototype life-support cycle is complete.')
     )
     radius = 280
 

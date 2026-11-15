@@ -82,7 +82,7 @@ class Main:
                             break
                     if cls.isRunning and cls.scene == 'base':
                         cls.base.update(deltaTime)
-                        hint = 'E: water plants (+food)' if cls.base.canWaterPlants() else ''
+                        hint = 'E: water plants (+provisions)' if cls.base.canWaterPlants() else ''
                         if cls.base.canSleep():
                             hint = 'E: sleep until 09:00' if not EnvironmentManager.isDay else 'E: rest (night only)'
                         cls.base.render(hint)
@@ -101,12 +101,12 @@ class Main:
             return
         skipped = EnvironmentManager.skipNight()
         if skipped <= 0:
-            cls.survival.notify('It is daytime. You can sleep here at night.')
+            cls.survival.notify('It is daylight. You can sleep here at night.')
             return
         cls.survival.update(skipped)
         cls.base.isWalking = False
         cls.base.walkTime = 0.0
-        cls.survival.notify('You slept until 09:00. Oxygen and food were consumed during sleep.')
+        cls.survival.notify('You slept until 09:00. Oxygen and provisions were consumed during sleep.')
         cls.survivalTicks = pg.time.get_ticks()
         ending = cls.missions.ending(cls.survival)
         if ending is not None:
@@ -119,7 +119,7 @@ class Main:
         elif cls.scene == 'signalLost':
             reason = 'Rover signal lost. Mission failed.'
         else:
-            reason = 'Oxygen depleted. Mission failed.' if cls.survival.oxygen <= 0 else 'Food depleted. Mission failed.'
+            reason = 'Oxygen depleted. Mission failed.' if cls.survival.oxygen <= 0 else 'Provisions depleted. Mission failed.'
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 cls.isRunning = False

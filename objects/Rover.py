@@ -669,7 +669,7 @@ class Rover(Texture):
         Texture.render(self, screen, offset)
 
     def renderHud(self, screen):
-        condition = 'NIGHT' if EnvironmentManager.nightBlend >= 0.5 else 'DAY'
+        condition = 'NIGHT' if EnvironmentManager.nightBlend >= 0.5 else 'DAYLIGHT'
         if EnvironmentManager.stormIntensity > 0.05:
             condition += ' / STORM'
         localHour = int(EnvironmentManager.displayedLocalTimeHour)
@@ -705,7 +705,7 @@ class Rover(Texture):
             text = self.hudFont.render(message, True, (255, 48, 48))
             screen.blit(text, (24, messageY + messageIndex * lineHeight))
         timeLabel = self.hudFont.render(
-            f'{localHour:02d}:{localMinute:02d} LMST',
+            f'SOL {int(EnvironmentManager.elapsedTime / EnvironmentManager.solDuration + 0.5) + 1}  {localHour:02d}:{localMinute:02d} LMST',
             True,
             (255, 255, 255)
         )
