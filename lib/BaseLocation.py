@@ -1,4 +1,6 @@
 from lib.AssetManager import AssetManager
+from lib.BaseInterior import BaseInterior
+from lib.Interface import Interface as UI
 import math
 
 import pygame as pg
@@ -66,6 +68,7 @@ class BaseLocation:
         self.position = pg.Vector2(120, 75)
         self.room = 'main'
         self.font = pg.font.Font(None, 25)
+        self.interiors = {name: BaseInterior.build(name, self.exits[name]) for name in self.rooms}
         self._scaledRoom = None
         self._renderKey = None
 
@@ -145,23 +148,18 @@ class BaseLocation:
                 return True
         return False
 
-    def render(self):
+    def render(self, hint=None):
         width, height = self.screen.get_size()
-        scale = min(width / 240, (height - 64) / 140)
+        scale = min((width - 48) / 240, (height - 180) / 140)
         size = (round(240 * scale), round(140 * scale))
-        offset = ((width - size[0]) // 2, 48 + (height - 64 - size[1]) // 2)
+        offset = ((width - size[0]) // 2, 100 + (height - 180 - size[1]) // 2)
         key = (self.room, size)
         if self._renderKey != key:
-            self._scaledRoom = pg.transform.scale(self.rooms[self.room], size)
+            self._scaledRoom = pg.transform.smoothscale(self.interiors[self.room], size)
             self._renderKey = key
         self.screen.fill('#101823')
         self.screen.blit(self._scaledRoom, offset)
-        # Show barriers at unavailable exits rather than leaving invisible walls.
-        if self.room == 'main':
-            for barrier in self.objects['main']:
-                pg.draw.rect(self.screen, '#596473',
-                             (offset[0] + barrier.x * scale, offset[1] + barrier.y * scale,
-                              max(2, barrier.w * scale), max(2, barrier.h * scale)))
+        pg.draw.rect(self.screen, UI.border, (offset[0]-2,offset[1]-2,size[0]+4,size[1]+4),2,border_radius=4)
         frame = int(self.walkTime * 8) % 4 if self.isWalking else 0
         spriteSize = (round(12 * scale), round(16 * scale))
         if spriteSize not in self._scaledFrames:
@@ -172,8 +170,23 @@ class BaseLocation:
         image = self._scaledFrames[spriteSize][self.facing][frame]
         feet = (round(offset[0] + self.position.x * scale),
                 round(offset[1] + (self.position.y + 2) * scale))
+        shadow=pg.Surface((max(1,round(12*scale)),max(1,round(4*scale))),pg.SRCALPHA)
+        pg.draw.ellipse(shadow,(0,0,0,95),shadow.get_rect())
+        self.screen.blit(shadow,shadow.get_rect(center=feet))
         self.screen.blit(image, image.get_rect(midbottom=feet))
-        label = self.roomNames[self.room] + '  |  WASD / Arrows: move  |  Esc: menu'
-        self.screen.blit(self.font.render(label, True, 'white'), (16, 12))
-        if self.canControl():
-            self.screen.blit(self.font.render('E: control rover', True, '#ffab40'), (16, height - 28))
+        # Ground shadow keeps the character visually attached to the floor.
+        # Room identification and controls stay outside the play area.
+        UI.text(self.screen,'ARES  /  HABITAT',(24,16),20,UI.cyan)
+        UI.text(self.screen,self.roomNames[self.room].upper(),(24,38),32)
+        UI.text(self.screen,'WASD / ARROWS   MOVE     |     ESC   MISSION MENU',(24,height-28),20,UI.muted)
+        action = None
+        if self.canControl():action='Access rover terminal'
+        elif self.canWaterPlants():action='Water the hydroponic beds'
+        elif self.canSleep():action='Rest in crew quarters'
+        if hint:
+            action = hint.removeprefix('E: ')
+        if action:
+            prompt=pg.Rect(width//2-170,height-73,340,38)
+            UI.panel(self.screen,prompt)
+            UI.key(self.screen,'E',(prompt.x+7,prompt.y+5))
+            UI.text(self.screen,action,(prompt.x+49,prompt.y+10),23)

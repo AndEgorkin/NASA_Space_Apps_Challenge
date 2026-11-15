@@ -82,12 +82,12 @@ class Main:
                             break
                     if cls.isRunning and cls.scene == 'base':
                         cls.base.update(deltaTime)
-                        cls.base.render()
                         hint = 'E: water plants (+food)' if cls.base.canWaterPlants() else ''
                         if cls.base.canSleep():
                             hint = 'E: sleep until 09:00' if not EnvironmentManager.isDay else 'E: rest (night only)'
-                        cls.survival.render(cls.screen, hint)
-                        cls.missions.renderStatus(cls.screen)
+                        cls.base.render(hint)
+                        cls.survival.render(cls.screen, compact=True)
+                        cls.missions.renderStatus(cls.screen, (24,75))
                         pg.display.flip()
                 else:
                     cls.tick()

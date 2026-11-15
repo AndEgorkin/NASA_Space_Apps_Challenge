@@ -1,6 +1,7 @@
 import math
 import pygame as pg
 from lib.RoverMap import RoverMap
+from lib.Interface import Interface as UI
 
 
 class Survival:
@@ -71,22 +72,34 @@ class Survival:
             return 'E: unload water at base'
         return ''
 
-    def render(self, screen, hint=''):
+    def render(self, screen, hint='', compact=False):
         width, height = screen.get_size()
-        panel = pg.Rect(width - 300, 48, 284, 136)
-        pg.draw.rect(screen, '#101823', panel, border_radius=8)
+        panel = pg.Rect(width-420,12,396,76) if compact else pg.Rect(width-300,48,284,142)
+        UI.panel(screen,panel)
         total = math.ceil(self.oxygen)
-        rows = [('OXYGEN  %02d:%02d' % divmod(total, 60), self.oxygen / self.oxygenDuration, '#60caff'),
-                (f'FOOD  {self.food:.0f}%', self.food / 100, '#83d674')]
-        for index, (label, fraction, color) in enumerate(rows):
-            y = panel.y + 10 + index * 42
-            screen.blit(self.font.render(label, True, 'white'), (panel.x+12, y))
-            bar = pg.Rect(panel.x+12, y+22, 260, 10)
-            pg.draw.rect(screen, '#364452', bar)
-            pg.draw.rect(screen, color if fraction > 0.2 else '#ef645c', (bar.x,bar.y,round(bar.w*fraction),bar.h))
-        inventory = f'Water: {self.water}  |  Rover cargo: {self.cargoWater}/{self.cargoCapacity}'
-        screen.blit(self.font.render(inventory, True, 'white'), (panel.x+12,panel.y+105))
+        rows = [('OXYGEN  %02d:%02d' % divmod(total,60),self.oxygen/self.oxygenDuration,UI.cyan),
+                (f'FOOD  {self.food:.0f}%',self.food/100,'#a4c879')]
+        for index,(label,fraction,color) in enumerate(rows):
+            x=panel.x+14+(index*188 if compact else 0)
+            y=panel.y+10+(0 if compact else index*43)
+            UI.text(screen,label,(x,y),21,UI.textColor)
+            bar=pg.Rect(x,y+22,174 if compact else 256,5)
+            pg.draw.rect(screen,'#283c4c',bar,border_radius=2)
+            pg.draw.rect(screen,color if fraction>0.2 else '#ef7566',(bar.x,bar.y,round(bar.w*fraction),bar.h),border_radius=2)
+        inventory=f'WATER  {self.water}     /     ROVER CARGO  {self.cargoWater}/{self.cargoCapacity}'
+        UI.text(screen,inventory,(panel.x+14,panel.y+(49 if compact else 108)),19,UI.muted)
         if hint:
-            screen.blit(self.font.render(hint, True, '#ffcd79'), (16,height-54))
+            UI.text(screen,hint,(24,height-54),23,UI.accent)
         if self.messageTime > 0:
-            screen.blit(self.font.render(self.message, True, '#ffcd79'), (16,height-80))
+            # Wrap notices so mission reports remain readable at the screen edge.
+            font=UI.font(23)
+            lines=['']
+            for word in self.message.split():
+                candidate=(lines[-1]+' '+word).strip()
+                if font.size(candidate)[0]>width-96:
+                    lines.append(word)
+                else:
+                    lines[-1]=candidate
+            box=pg.Rect(24,height-151,width-48,22*len(lines)+20)
+            UI.panel(screen,box)
+            for i,line in enumerate(lines):UI.text(screen,line,(box.x+12,box.y+10+i*22),23,UI.accent)

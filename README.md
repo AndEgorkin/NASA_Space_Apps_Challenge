@@ -113,3 +113,11 @@ Press E at night to sleep until 09:00 local solar time. Daytime sleep is disable
 The skipped interval uses the compressed 180-second sol; oxygen and food
 are consumed for that interval. Sleeping can exhaust remaining supplies.
 It does not refill supplies or instantly recharge the rover.
+
+# Interface design
+The expedition menu supports mouse input, Up/Down or Tab to select, and Enter
+or Space to confirm. Load and Settings remain visibly disabled placeholders.
+Base interiors use cached procedural panels, floor tiles, door lighting,
+consoles, bunks and hydroponic beds while retaining the original collision
+masks and room transitions. Shared interface colors, fonts and panels live
+in lib/Interface.py; room decoration is isolated in lib/BaseInterior.py.

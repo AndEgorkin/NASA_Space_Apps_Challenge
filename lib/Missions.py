@@ -100,9 +100,9 @@ class Missions:
             return True
         return False
 
-    def renderStatus(self, screen):
+    def renderStatus(self, screen, position=(16,48)):
         label = self.font.render(f'Missions: {self.completed}/8  |  M: map and objectives', True, '#ffdc8a')
-        screen.blit(label, (16,48))
+        screen.blit(label, position)
 
     def renderList(self, screen, x, y):
         for i, (title, location, points, actions, result) in enumerate(self.definitions):
