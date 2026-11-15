@@ -65,7 +65,7 @@ class Missions:
         for i in range(len(self.definitions)):
             if self.done(i) or self.progress[i] >= len(self.definitions[i][3]):
                 continue
-            if pg.Vector2(coords).distance_to(RoverMap.mapToWorld(self.target(i))) <= self.radius:
+            if pg.Vector2(coords).distance_to(RoverMap.mapToWorld(self.target(i))) <= (RoverMap.baseInteractionRadius if i == 7 else self.radius):
                 return i
         return None
 
@@ -92,7 +92,7 @@ class Missions:
 
     def analyseAtBase(self, survival, roverCoords):
         if self.progress[0] >= len(self.definitions[0][3]) and not self.analysed:
-            if pg.Vector2(roverCoords).distance_to(RoverMap.baseCoords) > 650:
+            if pg.Vector2(roverCoords).distance_to(RoverMap.baseCoords) > RoverMap.baseInteractionRadius:
                 survival.notify('First return the rover and its sample to base.')
                 return True
             self.analysed = True

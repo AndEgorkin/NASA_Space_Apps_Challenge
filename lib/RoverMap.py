@@ -9,7 +9,8 @@ class RoverMap:
     basePixel = pg.Vector2(480, 365)
     canyonPixel = pg.Vector2(280, 295)
     baseCoords = (0.0, 0.0)
-    spawnCoords = (0.0, -500.0)
+    spawnCoords = (0.0, -900.0)
+    baseInteractionRadius = 850
 
     def __init__(self):
         self.image = AssetManager.get('assets.map.GameMap')

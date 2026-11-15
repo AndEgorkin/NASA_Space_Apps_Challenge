@@ -38,11 +38,11 @@ python Main.py
 
 # Карта ровера
 M открывает/закрывает карту; Escape сначала закрывает карту, затем возвращает на базу.
-При открытой карте симуляция приостановлена. Синий квадрат — база, зелёная стрелка —
+При открытой карте управление движением отключено, но погода и системы продолжают работать. Синий квадрат — база, зелёная стрелка —
 ровер, подпись «Каньон с водой» — колодец. За границами карты положение обозначено зелёной полоской
 на соответствующем краю. Север карты соответствует положительному Y мира.
 Масштаб: 16 единиц мира на пиксель исходной карты (12288 × 8928 единиц).
-Координаты базы (0, 0), первый старт ровера (0, -500).
+Координаты базы (0, 0), первый старт ровера (0, -900).
 Изображение карты привязано к координатам; процедурный рельеф пока не повторяет снимок.
 Сохранение ровера: saves/rover.json, каждые 5 секунд движения симуляции, при выходе
 на базу и закрытии игры. Для нового старта у базы удалите этот файл.
@@ -89,3 +89,20 @@ Enter на итоговом экране сбрасывает миссии, ин
 Это упрощённые взаимодействия прототипа: точки размещены условно на изображении,
 геологические измерения и фотографии представлены виртуальными этапами,
 а «Каньон с водой» — игровая условность, не подтверждение современного источника.
+
+# Rover systems imported from main
+- Mouse wheel: adjust drive power from 0% to 200%.
+- Click [on]/[off] at the bottom right: toggle rover systems. Systems OFF
+  disables driving, zooms the camera in, and protects against solar flares.
+- Stop for at least 3 seconds during daylight to recharge the battery.
+- Cold, night, storms and overheating affect consumption and performance.
+- Cold nights can trigger temporary energy leaks.
+- Solar flares build up interference: turn systems OFF before signal is lost.
+- A flat battery or unprotected flare ends the attempt; Enter retries.
+- The map disables driving input but does not pause weather or electrical systems.
+- The base exterior and its rotated collisions come from main. The map still
+  anchors the base at (0, 0); the initial safe spawn is (0, -900).
+  Saves inside the new building are moved to that safe spawn.
+- MarsSurface owns terrain, camera, station collisions and rover rendering.
+  All disk assets, including the HUD font, are loaded by AssetManager.
+- Scientific inputs and gameplay simplifications are documented in NASA.md.

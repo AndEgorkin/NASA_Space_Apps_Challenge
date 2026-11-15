@@ -2,17 +2,12 @@ import pygame as pg
 
 from lib.AssetManager import AssetManager
 from lib.BaseLocation import BaseLocation
-from lib.Camera import Camera
 from lib.MainMenu import MainMenu
-from lib.EnvironmentManager import EnvironmentManager
-from lib.TerrainManager import TerrainManager
-from objects.Rover import Rover
-from objects.Texture import Texture
 from lib.RoverMap import RoverMap
 from lib.RoverSave import RoverSave
 from lib.Survival import Survival
 from lib.Missions import Missions
-from objects.WaterWell import WaterWell
+from scenes.MarsSurface import MarsSurface
 
 class Main:
     screen = None
@@ -46,20 +41,22 @@ class Main:
         cls.scene = 'menu'
         try:
             while cls.isRunning:
-                if cls.scene not in ('menu', 'depleted', 'won'):
+                if cls.scene not in ('menu', 'depleted', 'won', 'signalLost'):
                     now = pg.time.get_ticks()
                     cls.survival.update((now - cls.survivalTicks) / 1000.0)
                     cls.survivalTicks = now
                     ending = cls.missions.ending(cls.survival)
                     if ending is not None:
                         cls.scene = ending
+                    elif cls.rover is not None and cls.rover.gameOver:
+                        cls.scene = 'signalLost'
                 if cls.scene == 'menu':
                     if not MainMenu(cls.screen).run():
                         break
                     cls.scene = 'base'
                     cls.survivalTicks = pg.time.get_ticks()
                     cls.clock.tick()
-                elif cls.scene in ('depleted', 'won'):
+                elif cls.scene in ('depleted', 'won', 'signalLost'):
                     cls.showEnding()
                 elif cls.scene == 'base':
                     deltaTime = cls.clock.tick(60) / 1000.0
@@ -95,6 +92,8 @@ class Main:
     def showEnding(cls):
         if cls.scene == 'won':
             reason = 'All 8 missions complete. Rescue has arrived: you are going home!'
+        elif cls.scene == 'signalLost':
+            reason = 'Rover signal lost. Mission failed.'
         else:
             reason = 'Oxygen depleted. Mission failed.' if cls.survival.oxygen <= 0 else 'Food depleted. Mission failed.'
         for event in pg.event.get():
@@ -104,6 +103,8 @@ class Main:
                 cls.survival = Survival()
                 cls.missions = Missions()
                 cls.mapOpen = False
+                if cls.rover is not None:
+                    cls.surface.reset()
                 cls.base = BaseLocation(cls.screen)
                 cls.scene = 'base'
                 cls.survivalTicks = pg.time.get_ticks()
@@ -118,15 +119,10 @@ class Main:
     @classmethod
     def startRover(cls):
         if cls.rover is None:
-            cls.rover = Rover()
-            cls.buffer.append(WaterWell())
-            RoverSave.load(cls.rover, RoverMap.spawnCoords)
-            cls.buffer.append(Texture('base.exterior', RoverMap.baseCoords, 0, 0.6,
-                                      AssetManager.get('assets.texture.base-exterior'), 50))
-            cls.camera = Camera(cls.rover.coords)
-            EnvironmentManager.dustTexture = AssetManager.get('assets.texture.dust')
-            cls.buffer.append(cls.rover)
-            TerrainManager.loadInitialChunks(cls.rover.coords, cls.buffer)
+            cls.surface = MarsSurface()
+            cls.rover = cls.surface.rover
+            cls.buffer = cls.surface.objects
+            cls.camera = cls.surface.camera
         cls.mapOpen = False
         cls.scene = 'rover'
         cls.clock.tick()
@@ -147,15 +143,18 @@ class Main:
                 RoverSave.save(cls.rover)
                 cls.scene = 'base'
                 return
+            cls.surface.handleEvent(event)
             if event.type == pg.KEYDOWN and event.key == pg.K_m:
                 cls.mapOpen = not cls.mapOpen
-            if event.type == pg.KEYDOWN and event.key == pg.K_e and not cls.mapOpen:
+            if event.type == pg.KEYDOWN and event.key == pg.K_e and not cls.mapOpen and cls.rover.systemsOn and not cls.rover.gameOver:
                 cls.survival.roverAction(cls.rover.coords)
                 cls.missions.roverAction(cls.rover.coords, cls.survival)
 
+        cls.surface.update(deltaTime, cls.screen.get_size(), controlsEnabled=not cls.mapOpen)
         if cls.mapOpen:
             cls.roverMap.render(cls.screen, cls.rover, cls.missions)
             cls.survival.render(cls.screen)
+            cls.surface.renderMapStatus(cls.screen)
             pg.display.flip()
             cls.clock.tick(60)
             return
@@ -163,28 +162,7 @@ class Main:
         if cls.saveElapsed >= 5:
             RoverSave.save(cls.rover)
             cls.saveElapsed = 0.0
-        TerrainManager.update(cls.rover.coords, cls.buffer)
-        screenSize = cls.screen.get_size()
-        EnvironmentManager.update(deltaTime, screenSize)
-        EnvironmentManager.applyWeather(cls.rover, deltaTime)
-
-        cls.buffer.sort(key=lambda texture: texture.priority)
-
-        cls.screen.fill('#000000')
-        for texture in cls.buffer:
-            texture.update(deltaTime)
-
-        cls.camera.follow(cls.rover.coords)
-        cameraOffset = EnvironmentManager.getCameraOffset(
-            cls.camera.coords,
-            screenSize
-        )
-
-        for texture in cls.buffer:
-            texture.render(cls.screen, cameraOffset)
-
-        cls.missions.renderWorld(cls.screen, cameraOffset)
-        EnvironmentManager.render(cls.screen)
+        cls.surface.render(cls.screen, cls.missions)
         hint = pg.font.Font(None, 24).render('M: map  |  Esc: base', True, 'white')
         cls.screen.blit(hint, (16, 16))
 

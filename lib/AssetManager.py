@@ -25,6 +25,8 @@ class AssetManager:
                 asset = pg.image.load(str(path))
                 if pg.display.get_surface() is not None:
                     asset = asset.convert_alpha()
+            elif extension in {'.ttf', '.otf'}:
+                asset = pg.font.Font(str(path), 32)
             elif extension in cls.soundExtensions:
                 asset = pg.mixer.Sound(str(path))
             else:

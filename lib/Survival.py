@@ -43,7 +43,7 @@ class Survival:
             else:
                 self.cargoWater += 1
                 self.notify('Water collected into rover cargo.')
-        elif point.distance_to(RoverMap.baseCoords) <= 650:
+        elif point.distance_to(RoverMap.baseCoords) <= RoverMap.baseInteractionRadius:
             if self.cargoWater:
                 self.deliveredWater += self.cargoWater
                 self.water += self.cargoWater
@@ -67,7 +67,7 @@ class Survival:
         point = pg.Vector2(coords)
         if point.distance_to(RoverMap.mapToWorld(RoverMap.canyonPixel)) <= self.interactionRadius:
             return 'E: collect water from well'
-        if point.distance_to(RoverMap.baseCoords) <= 650:
+        if point.distance_to(RoverMap.baseCoords) <= RoverMap.baseInteractionRadius:
             return 'E: unload water at base'
         return ''
 
