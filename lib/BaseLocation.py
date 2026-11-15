@@ -1,6 +1,7 @@
 from lib.AssetManager import AssetManager
 from lib.BaseInterior import BaseInterior
 from lib.Interface import Interface as UI
+from lib.EnvironmentManager import EnvironmentManager
 import math
 
 import pygame as pg
@@ -196,6 +197,8 @@ class BaseLocation:
                 round(offset[1] + (self.position.y + 2) * scale))
         self.screen.blit(image, image.get_rect(midbottom=feet), special_flags=pg.BLEND_PREMULTIPLIED)
         # Room identification and controls stay outside the play area.
+        UI.text(self.screen,EnvironmentManager.clockLabel(),(width//2-100,20),23,UI.cyan)
+        UI.text(self.screen,'DAYLIGHT' if EnvironmentManager.isDay else 'NIGHT',(width//2-100,47),19,UI.muted)
         UI.text(self.screen,'ARES  /  HABITAT',(24,16),20,UI.cyan)
         UI.text(self.screen,self.roomNames[self.room].upper(),(24,38),32)
         UI.text(self.screen,'WASD / ARROWS   MOVE     |     ESC   MISSION MENU',(24,height-28),20,UI.muted)

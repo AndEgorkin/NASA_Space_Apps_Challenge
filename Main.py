@@ -5,7 +5,6 @@ from lib.AssetManager import AssetManager
 from lib.BaseLocation import BaseLocation
 from lib.MainMenu import MainMenu
 from lib.RoverMap import RoverMap
-from lib.RoverSave import RoverSave
 from lib.Survival import Survival
 from lib.Missions import Missions
 from scenes.MarsSurface import MarsSurface
@@ -36,7 +35,6 @@ class Main:
         cls.base = BaseLocation(cls.screen)
         cls.roverMap = RoverMap()
         cls.mapOpen = False
-        cls.saveElapsed = 0.0
         cls.survival = Survival()
         cls.missions = Missions()
         cls.survivalTicks = pg.time.get_ticks()
@@ -62,6 +60,7 @@ class Main:
                     cls.showEnding()
                 elif cls.scene == 'base':
                     deltaTime = cls.clock.tick(60) / 1000.0
+                    EnvironmentManager.update(deltaTime, cls.screen.get_size())
                     for event in pg.event.get():
                         action = cls.base.handleEvent(event)
                         if action == 'quit':
@@ -92,7 +91,6 @@ class Main:
                 else:
                     cls.tick()
         finally:
-            RoverSave.save(cls.rover)
             pg.quit()
 
     @classmethod
@@ -158,13 +156,11 @@ class Main:
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 cls.isRunning = False
-                RoverSave.save(cls.rover)
                 return
             if event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE:
                 if getattr(cls, 'mapOpen', False):
                     cls.mapOpen = False
                     continue
-                RoverSave.save(cls.rover)
                 cls.scene = 'base'
                 return
             cls.surface.handleEvent(event)
@@ -182,10 +178,6 @@ class Main:
             pg.display.flip()
             cls.clock.tick(60)
             return
-        cls.saveElapsed += deltaTime
-        if cls.saveElapsed >= 5:
-            RoverSave.save(cls.rover)
-            cls.saveElapsed = 0.0
         cls.surface.render(cls.screen, cls.missions)
         hint = pg.font.Font(None, 24).render('M: map  |  Esc: base', True, 'white')
         cls.screen.blit(hint, (16, 16))

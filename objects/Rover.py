@@ -672,10 +672,6 @@ class Rover(Texture):
         condition = 'NIGHT' if EnvironmentManager.nightBlend >= 0.5 else 'DAYLIGHT'
         if EnvironmentManager.stormIntensity > 0.05:
             condition += ' / STORM'
-        localHour = int(EnvironmentManager.displayedLocalTimeHour)
-        localMinute = int(
-            (EnvironmentManager.displayedLocalTimeHour - localHour) * 60.0
-        )
         labels = (
             f'CHARGE {self.charge:3.0f}%',
             f'POWER {self.powerPercent:3.0f}%',
@@ -705,7 +701,7 @@ class Rover(Texture):
             text = self.hudFont.render(message, True, (255, 48, 48))
             screen.blit(text, (24, messageY + messageIndex * lineHeight))
         timeLabel = self.hudFont.render(
-            f'SOL {int(EnvironmentManager.elapsedTime / EnvironmentManager.solDuration + 0.5) + 1}  {localHour:02d}:{localMinute:02d} LMST',
+            EnvironmentManager.clockLabel(),
             True,
             (255, 255, 255)
         )

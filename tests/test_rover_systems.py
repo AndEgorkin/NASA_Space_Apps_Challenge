@@ -88,9 +88,9 @@ class RoverSystemsTests(unittest.TestCase):
         EnvironmentManager.update(8,self.screen.get_size(),self.rover)
         self.assertTrue(self.rover.gameOver)
 
-    def testStationCollisionZoomAndLegacySave(self):
+    def testStationCollisionZoomAndFreshSpawn(self):
         self.rover.destroy()
-        with patch('lib.RoverSave.RoverSave.load',side_effect=lambda rover,default:rover.coords.__setitem__(slice(None),(0,0))), patch('lib.TerrainManager.TerrainManager.loadInitialChunks'):
+        with patch('lib.TerrainManager.TerrainManager.loadInitialChunks'):
             scene=MarsSurface()
         try:
             self.assertEqual(tuple(scene.rover.coords),RoverMap.spawnCoords)

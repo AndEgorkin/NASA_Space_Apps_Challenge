@@ -58,3 +58,10 @@ class SleepTests(unittest.TestCase):
         Main.sleepAtBase()
         self.assertEqual(Main.scene,'depleted')
         self.assertEqual(Main.survival.oxygen,0)
+
+    def testClockAdvancesWithoutRoverAtBase(self):
+        from unittest.mock import patch
+        with patch('random.random',return_value=1):
+            EnvironmentManager.update(30,self.screen.get_size())
+        self.assertAlmostEqual(EnvironmentManager.localTimeHour,13.2)
+        self.assertIn('13:12',EnvironmentManager.clockLabel())

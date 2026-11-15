@@ -106,7 +106,7 @@ class EnvironmentManager:
         ]
 
     @classmethod
-    def update(cls, deltaTime, screenSize, rover):
+    def update(cls, deltaTime, screenSize, rover=None):
         deltaTime = max(0.0, deltaTime)
         cls._advanceClock(deltaTime)
 
@@ -145,7 +145,7 @@ class EnvironmentManager:
                         cls._startSolarFlare(screenSize)
 
         if cls.solarFlareActive:
-            if rover.systemsOn:
+            if rover is not None and rover.systemsOn:
                 if cls.solarFlareRecoveryActive:
                     cls.solarFlareRecoveryActive = False
                     cls.solarFlareElapsed = (
@@ -317,7 +317,7 @@ class EnvironmentManager:
                 particle['baseY'] = random.uniform(0.0, screenHeight)
         cls.dustParticlesActive = hasActiveParticles
 
-        if deltaTime > 0.0:
+        if deltaTime > 0.0 and rover is not None:
             gust = 0.8 + 0.2 * math.sin(cls.elapsedTime * 0.7)
             rover.applyWind(
                 -cls.windAcceleration * gust * cls.stormIntensity,
@@ -379,6 +379,13 @@ class EnvironmentManager:
             clearTemperature
             + stormTemperatureOffset * cls.stormIntensity
         )
+
+    @classmethod
+    def clockLabel(cls):
+        hour = int(cls.displayedLocalTimeHour)
+        minute = min(59, int((cls.displayedLocalTimeHour-hour)*60 + 1e-7))
+        sol = int(cls.elapsedTime/cls.solDuration+0.5)+1
+        return f'SOL {sol}  {hour:02d}:{minute:02d} LMST'
 
     @classmethod
     def skipNight(cls):
