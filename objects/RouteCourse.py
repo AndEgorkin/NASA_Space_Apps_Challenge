@@ -11,10 +11,11 @@ class RouteCourse:
         points=[pg.Vector2(RoverMap.mapToWorld(point)) for point in mapPoints]
         for segment,(start,end) in enumerate(zip(points,points[1:])):
             delta=end-start;normal=pg.Vector2(-delta.y,delta.x).normalize()
-            for row,fraction in enumerate((0.35,0.65)):
-                for lane,offset in enumerate((-350,85 if (segment+row)%2 else -85,350)):
+            for row,fraction in enumerate((0.5,)):
+                for lane,offset in enumerate((-480,80 if segment%2 else -80,480)):
                     center=start+delta*fraction+normal*offset
                     if any(center.distance_to(point)<210 for point in points):continue
+                    if any(center.distance_to(pg.Vector2(box.coords))<330 for box in collisions):continue
                     width=150; height=150
                     image=pg.Surface((width,height),pg.SRCALPHA)
                     pg.draw.polygon(image,'#543a32',[(0,35),(30,0),(115,0),(149,35),(149,125),(120,149),(25,149),(0,115)])

@@ -354,6 +354,49 @@ class Rover(Texture):
             special_flags=pg.BLEND_ALPHA_SDL2
         )
 
+    def _collisionBox(self, coords=None, rotation=None):
+        return BoundingBox(self.coords if coords is None else coords,
+                           self.texture.get_width()*self.scale*0.8,
+                           self.texture.get_height()*self.scale*0.8,
+                           self.rotation if rotation is None else rotation)
+
+    def _blockedPose(self, coords, rotation):
+        roverBox=self._collisionBox(coords,rotation)
+        return any(roverBox.penetration(obstacle) is not None for obstacle in self.boundingBoxes)
+
+    def _moveWithCollisions(self, movement, rotationDelta):
+        collided=False
+        # Recover from an already overlapping pose without a blind backwards kick.
+        for _ in range(16):
+            roverBox=self._collisionBox()
+            correction=next((vector for obstacle in self.boundingBoxes
+                             if (vector:=roverBox.penetration(obstacle)) is not None),None)
+            if correction is None:break
+            self.coords[0]+=correction[0];self.coords[1]+=correction[1]
+            collided=True
+        radius=math.hypot(self.texture.get_width(),self.texture.get_height())*self.scale*0.4
+        # Account for corner travel during a turn as well as center translation.
+        stepLimit=min([4.0]+[max(0.1,min(box.halfWidth,box.halfHeight)/2) for box in self.boundingBoxes])
+        steps=max(1,math.ceil((math.hypot(*movement)+abs(math.radians(rotationDelta))*radius)/stepLimit))
+        dx,dy=movement[0]/steps,movement[1]/steps
+        turn=rotationDelta/steps
+        for _ in range(steps):
+            angle=(self.rotation+turn+180)%360-180
+            candidate=(self.coords[0]+dx,self.coords[1]+dy)
+            if not self._blockedPose(candidate,angle):
+                self.coords[:]=candidate;self.rotation=angle
+                continue
+            collided=True
+            # Reject only blocked components: let a rover slide along a rock face.
+            if not self._blockedPose(self.coords,angle):self.rotation=angle
+            for axis,amount in sorted(((0,dx),(1,dy)),key=lambda item:abs(item[1]),reverse=True):
+                candidate=list(self.coords);candidate[axis]+=amount
+                if not self._blockedPose(candidate,self.rotation):self.coords[:]=candidate
+        if collided:
+            self.velocity=0.0
+            self.lateralVelocity=0.0
+        return collided
+
     def update(self, deltaTime=1.0 / 60.0, controlsEnabled=True):
         if self.gameOver:
             return
@@ -571,56 +614,9 @@ class Rover(Texture):
             min(self.lateralVelocity, lateralLimit)
         )
         forwardX, forwardY, rightX, rightY = directionAxes
-        self.rotation = (
-            self.rotation + math.degrees(yawRate * deltaTime) + 180.0
-        ) % 360.0 - 180.0
-        nextCoords = (
-            self.coords[0] + (
-                forwardX * self.velocity + rightX * self.lateralVelocity
-            ) * deltaTime,
-            self.coords[1] + (
-                forwardY * self.velocity + rightY * self.lateralVelocity
-            ) * deltaTime
-        )
-        roverBoundingBox = BoundingBox(
-            nextCoords,
-            self.texture.get_width() * self.scale * 0.8,
-            self.texture.get_height() * self.scale * 0.8,
-            self.rotation
-        )
-        collidedBox = next(
-            (
-                boundingBox
-                for boundingBox in self.boundingBoxes
-                if boundingBox.intersects(roverBoundingBox)
-            ),
-            None
-        )
-        if collidedBox is not None:
-            movementX = nextCoords[0] - self.coords[0]
-            movementY = nextCoords[1] - self.coords[1]
-            movementLength = math.hypot(movementX, movementY)
-            if movementLength > 0.0:
-                recoilX = -movementX / movementLength
-                recoilY = -movementY / movementLength
-            else:
-                recoilX = self.coords[0] - collidedBox.coords[0]
-                recoilY = self.coords[1] - collidedBox.coords[1]
-                recoilLength = math.hypot(recoilX, recoilY)
-                if recoilLength == 0.0:
-                    forwardX, forwardY, _, _ = self._getDirectionAxes()
-                    recoilX = -forwardX
-                    recoilY = -forwardY
-                else:
-                    recoilX /= recoilLength
-                    recoilY /= recoilLength
-
-            self.coords[0] += recoilX * 4.0
-            self.coords[1] += recoilY * 4.0
-            self.velocity = 0.0
-            self.lateralVelocity = 0.0
-        else:
-            self.coords[0], self.coords[1] = nextCoords
+        movement=((forwardX*self.velocity+rightX*self.lateralVelocity)*deltaTime,
+                  (forwardY*self.velocity+rightY*self.lateralVelocity)*deltaTime)
+        self._moveWithCollisions(movement,math.degrees(yawRate*deltaTime))
         if math.hypot(self.velocity, self.lateralVelocity) <= (
             self.stationarySpeedThreshold
         ):

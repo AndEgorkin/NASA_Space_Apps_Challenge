@@ -56,12 +56,21 @@ class InteractiveMissionTests(unittest.TestCase):
         route=self.missions.definitions[6][2]
         rocks,boxes=RouteCourse.build(route)
         try:
-            self.assertGreaterEqual(len(rocks),12)
+            self.assertGreaterEqual(len(rocks),6)
+            self.assertLessEqual(len(rocks),12)
             for rock,box in zip(rocks,boxes):
                 self.assertEqual(tuple(rock.coords),box.coords)
                 self.assertEqual(box.halfWidth*2,rock.texture.get_width()*rock.scale)
             points=[pg.Vector2(RoverMap.mapToWorld(point)) for point in route]
             for start,end in zip(points,points[1:]):
+                direction=end-start
+                normal=pg.Vector2(-direction.y,direction.x).normalize()
+                # A generous full-rover opening must exist BETWEEN each row's
+                # rocks, rather than requiring a detour around the whole field.
+                self.assertTrue(any(
+                    not any(box.intersects(BoundingBox((start+end)/2+normal*offset,160,180))
+                            for box in boxes)
+                    for offset in (-260,260)))
                 # Verify a collision-free path for a full-size rover, not just a point.
                 step=70
                 def snapped(point):return (round(point.x/step),round(point.y/step))
