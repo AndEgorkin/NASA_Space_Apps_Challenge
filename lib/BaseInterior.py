@@ -42,8 +42,7 @@ class BaseInterior:
             label('RESEARCH OUTPOST',(77,105),6)
             for x in (58,180):
                 rect('#536979',(x,40,2,57));rect(UI.accent,(x,53,2,29))
-            rect('#172530',(89,62,64,20),radius=3)
-            label('ARES / 01',(99,68),7,UI.accent)
+            label('ARES / 01',(99,91),7,UI.accent)
             for y in (10,128):
                 for x in (68,154):rect('#7098a4',(x,y,17,1))
         elif room=='corridor':
@@ -62,7 +61,6 @@ class BaseInterior:
             rect('#354754',(39,62,6,14),radius=2)
             label('03 / CONTROL ROOM',(78,36),8,UI.textColor)
             label('REMOTE EXPLORATION DIVISION',(78,48),5)
-            rect('#142330',(77,63,102,34),radius=3)
             label('ROVER TELEMETRY',(84,70),6,UI.cyan)
             label('LINK AVAILABLE / TERMINAL 01',(84,83),5)
             label('OPERATIONS >',(190,109),5,UI.cyan)
