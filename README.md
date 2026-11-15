@@ -48,7 +48,7 @@ Sleeping skips the night. The skipped hours still use oxygen and provisions at t
 
 ### Experimental power at the base
 
-The base design draws inspiration from a 2018 drop-tower study in which researchers used light to produce hydrogen under brief conditions of microgravity. The game imagines a base that uses solar electricity during daylight to split water into hydrogen and oxygen. At night, a fuel cell recombines the stored gases to generate electricity and produce water. This hydrogen/fuel-cell system is a narrative concept, not an implemented resource-conversion mechanic. Oxygen stored for power generation stays in that imagined system. The astronaut has a separate, limited breathing supply. [Read the 2018 study in *Nature Communications*.](https://www.nature.com/articles/s41467-018-04844-y)
+The base design draws inspiration from a 2018 drop-tower study in which researchers used light to produce hydrogen under brief conditions of microgravity. The game imagines a base that uses solar electricity during daylight to split water into hydrogen and oxygen. At night, a fuel cell recombines the stored gases to generate electricity. This hydrogen/fuel-cell system is a concept for now. [Read the 2018 study in *Nature Communications*.](https://www.nature.com/articles/s41467-018-04844-y)
 
 ## Controls
 
@@ -69,7 +69,7 @@ The upper-right display tracks oxygen, provisions, and water. A full stock of pr
 
 Finishing all eight missions triggers evacuation. Running out of oxygen or provisions, draining the rover battery, or losing the signal to an unprotected solar flare ends the attempt.
 
-Switching between the base and rover preserves their state during the current attempt. There are **no disk saves**: each new launch starts fresh with the rover near the base, full supplies, and no completed missions. Old save files are ignored. The sol clock and weather continue while the astronaut is at the base, even before the first rover session. **Load** and **Settings** remain placeholders.
+each new launch starts fresh with the rover near the base, full supplies, and no completed missions. The sol clock and weather continue while the astronaut is at the base, even before the first rover session.
 
 ## NASA data and resources
 
@@ -79,7 +79,7 @@ Switching between the base and rover preserves their state during the current at
 | Mars sol length — NASA Mars Facts | Reference for the length of a sol, compressed into the game’s ten-minute cycle. | [https://science.nasa.gov/mars/facts/](https://science.nasa.gov/mars/facts/) |
 | Mars surface temperature — NASA Planetary Spectrum Generator | Reference for Martian surface temperatures, simplified for the rover’s temperature and power mechanics. | [https://psg.gsfc.nasa.gov/apps/mars/](https://psg.gsfc.nasa.gov/apps/mars/) |
 
-Evidence of ancient water helps scientists investigate what Mars was like long ago. It does not prove that liquid water flows there now. The seasonal dark streaks give players a chance to compare observations before drawing a conclusion. The underground ice extraction site is a fictional resource location created for the game.
+
 
 ## Development
 
@@ -94,11 +94,11 @@ Use `camelCase` for variables and functions, `PascalCase` for class names, and a
 
 ## Research missions
 
-Open the rover map with **M** to see eight numbered research sites and their progress. Drive close to a marker and press **E** once for each step shown in the interaction hint. Missions 1 and 7 include interactive tasks described below; other missions currently use simplified E interactions and resource requirements. Missions can be attempted in any order, subject to the requirements below. Research actions are simplified virtual measurements; marker positions are chosen for gameplay rather than precise geographic accuracy.
+Open the rover map with **M** to see eight numbered research sites and their progress. Drive close to a marker and press **E** once for each step shown in the interaction hint. Missions 1 and 7 include interactive tasks described below; other missions currently use simplified E interactions and resource requirements. Missions can be attempted in any order. Research actions are simplified virtual measurements; marker positions are chosen for gameplay rather than precise geographic accuracy.
 
 | # | Mission | Location | How to complete it |
 |---|---|---|---|
-| 1 | **The Ancient Water Mystery** | Hebes / Candor Chasma | Press **E** at the site to deploy the manipulator. Move the gripper to the sample with **WASD** and press **E** to grab it. Move to the left **TRAY** and press **E** to store the sample; only then is collection credited. **Esc** cancels without awarding the sample. Rover driving is disabled while the arm is active. After storage, press **E** to measure mineral composition. Return the rover to the outside of the base. Press **Esc**, approach the control-room computer, and press **E** to analyze the returned sample. This final analysis completes the mission; another **E** resumes rover control. |
+| 1 | **The Ancient Water Mystery** | Hebes / Candor Chasma | Press **E** at the site to deploy the manipulator. Move the gripper to the sample with **WASD** and press **E** to grab it. Move to the left **TRAY** and press **E** to store the sample; only then is collection credited. **Esc** cancels without awarding the sample. Rover driving is disabled while the arm is active. After storage, press **E** to measure mineral composition. Return the rover to the outside of the base. Press **Esc**, approach the control-room computer, and press **E** to analyze the returned sample. This final analysis completes the mission; another **E** resumes rover control. Evidence of ancient water helps scientists investigate what Mars was like long ago. It does not prove that liquid water flows there now.|
 | 2 | **The Great Landslide** | Ius Chasma | Press **E** at site 2 to map the debris, then press **E** again to inspect exposed rock layers. The interactive debris-mapping survey is currently a concept only. |
 | 3 | **The Mysterious Dark Streaks** | Melas / Coprates Chasma | Press **E** to compare seasonal images, then again to take a remote measurement. The cause of these streaks remains debated: salts and dry flows are possible explanations, and liquid water is not confirmed. |
 | 4 | **The Geological Archive** | Hebes Chasma | Press **E** to photograph the rock layers, then again to compare their sequence and reconstruct the relative order of geological events. |
@@ -118,7 +118,7 @@ The mission counter tracks **0/8** through **8/8**. Completing all eight mission
 
 - **Mission 1 — The Ancient Water Mystery:** deploy the arm with E, move the gripper with WASD, grab the sample with E, and place it in the left TRAY with E. Collection requires both pickup and storage. Cancel with Esc. Then measure the minerals and return the rover to base for computer analysis.
 - **Mission 7 — The Impossible Route:** steer through the gaps between nine collidable rocks and visit all five checkpoints in order. The map displays the route; E validates each checkpoint. Movement and rotation collisions are checked in small steps, with sliding along obstacles instead of a backwards kick.
-- **Missions 5 and 8 already share a resource loop:** discovering ice unlocks extraction; delivered ice melts into water; watering the hydroponic beds replenishes provisions and satisfies a station prerequisite. These interactions are implemented, while the additional minigames below are only proposals.
+- **Missions 5 and 8 already share a resource loop:** discovering ice unlocks extraction; delivered ice melts into water; watering the hydroponic beds replenishes provisions and satisfies a station prerequisite. These interactions are implemented, while the additional minigames below are only proposals for now.
 
 ### Planned only — not yet implemented
 
