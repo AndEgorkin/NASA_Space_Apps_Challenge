@@ -58,7 +58,7 @@ class BaseLocation:
         for row in cells:
             for cell in row:
                 cropBounds.union_ip(cell.get_bounding_rect())
-        self.walkFrames = [[cell.subsurface(cropBounds).copy() for cell in row]
+        self.walkFrames = [[cell.subsurface(cropBounds).copy().convert_alpha() for cell in row]
                            for row in cells]
         self._scaledFrames = {}
         self.facing = 0
@@ -170,11 +170,7 @@ class BaseLocation:
         image = self._scaledFrames[spriteSize][self.facing][frame]
         feet = (round(offset[0] + self.position.x * scale),
                 round(offset[1] + (self.position.y + 2) * scale))
-        shadow=pg.Surface((max(1,round(12*scale)),max(1,round(4*scale))),pg.SRCALPHA)
-        pg.draw.ellipse(shadow,(0,0,0,95),shadow.get_rect())
-        self.screen.blit(shadow,shadow.get_rect(center=feet))
         self.screen.blit(image, image.get_rect(midbottom=feet))
-        # Ground shadow keeps the character visually attached to the floor.
         # Room identification and controls stay outside the play area.
         UI.text(self.screen,'ARES  /  HABITAT',(24,16),20,UI.cyan)
         UI.text(self.screen,self.roomNames[self.room].upper(),(24,38),32)

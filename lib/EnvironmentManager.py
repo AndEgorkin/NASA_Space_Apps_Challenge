@@ -4,7 +4,7 @@ import pygame as pg
 from objects.Texture import Texture
 
 class EnvironmentManager:
-    solDuration = 180.0
+    solDuration = 600.0
     clockUpdateInterval = 2.0
     hourlySurfaceTemperaturesC = (
         -70.0, -74.0, -77.0, -79.0, -80.0, -80.0,

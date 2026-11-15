@@ -110,7 +110,7 @@ Enter на итоговом экране сбрасывает миссии, ин
 # Sleeping at base
 In Crew Cabins, approach the lower edge of the beds at the top of the room.
 Press E at night to sleep until 09:00 local solar time. Daytime sleep is disabled.
-The skipped interval uses the compressed 180-second sol; oxygen and food
+The skipped interval uses the compressed 600-second sol; oxygen and food
 are consumed for that interval. Sleeping can exhaust remaining supplies.
 It does not refill supplies or instantly recharge the rover.
 
@@ -121,3 +121,6 @@ Base interiors use cached procedural panels, floor tiles, door lighting,
 consoles, bunks and hydroponic beds while retaining the original collision
 masks and room transitions. Shared interface colors, fonts and panels live
 in lib/Interface.py; room decoration is isolated in lib/BaseInterior.py.
+
+The full day/night cycle lasts 10 real minutes. Character sprites render
+with transparency and no dark ground plate.

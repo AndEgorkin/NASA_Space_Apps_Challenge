@@ -68,10 +68,10 @@ class RoverSystemsTests(unittest.TestCase):
         self.assertTrue(self.rover.gameOver)
 
     def testNasaSolAndTemperatureProfile(self):
-        EnvironmentManager.update(90,self.screen.get_size(),self.rover)
+        EnvironmentManager.update(EnvironmentManager.solDuration/2,self.screen.get_size(),self.rover)
         self.assertAlmostEqual(EnvironmentManager.localTimeHour,0)
         self.assertEqual(EnvironmentManager.surfaceTemperatureC,-70)
-        EnvironmentManager.update(90,self.screen.get_size(),self.rover)
+        EnvironmentManager.update(EnvironmentManager.solDuration/2,self.screen.get_size(),self.rover)
         self.assertAlmostEqual(EnvironmentManager.localTimeHour,12)
         self.assertEqual(EnvironmentManager.surfaceTemperatureC,-30)
         self.assertEqual(min(EnvironmentManager.hourlySurfaceTemperaturesC),-80)
