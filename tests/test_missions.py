@@ -23,10 +23,19 @@ class MissionTests(unittest.TestCase):
             self.missions.manipulatorAction(coords,self.survival)
             arm.tip.update(arm.tray)
             self.missions.manipulatorAction(coords,self.survival)
+        if index == 1 and self.missions.landslideSurvey.active:
+            survey=self.missions.landslideSurvey
+            size=(1200,830)
+            field=survey.layout(size)[1]
+            for point in survey.clusters:
+                event=pg.event.Event(pg.MOUSEBUTTONDOWN,button=1,pos=(field.x+point[0],field.y+point[1]))
+                self.missions.handleInteractionEvent(event,coords,self.survival,size)
+            self.missions.handleInteractionEvent(pg.event.Event(pg.KEYDOWN,key=pg.K_s),coords,self.survival,size)
+            self.missions.handleInteractionEvent(pg.event.Event(pg.KEYDOWN,key=pg.K_e),coords,self.survival,size)
 
     def testCompleteAllAndEvacuate(self):
         for i in range(7):
-            for _ in self.missions.definitions[i][3]:
+            while self.missions.progress[i]<len(self.missions.definitions[i][3]):
                 self.pressAt(i)
         self.assertEqual(self.missions.completed,6)
         self.assertFalse(self.missions.analysed)

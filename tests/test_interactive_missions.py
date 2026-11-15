@@ -48,7 +48,7 @@ class InteractiveMissionTests(unittest.TestCase):
         arm.cancel()
         self.assertEqual(self.missions.progress[0],0)
         self.missions.roverAction(coords,self.survival)
-        self.missions.updateManipulator(1/60,SimpleNamespace(coords=coords,gameOver=False,systemsOn=False),self.survival)
+        self.missions.updateInteractions(1/60,SimpleNamespace(coords=coords,gameOver=False,systemsOn=False),self.survival)
         self.assertFalse(arm.active)
         self.assertEqual(self.missions.progress[0],0)
 

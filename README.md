@@ -54,12 +54,13 @@ The base design draws inspiration from a 2018 drop-tower study in which research
 
 | Input | Action |
 |---|---|
-| **WASD** or **arrow keys** | Walk around the base. In rover mode, **W/S** drive and **A/D** steer. While the manipulator is deployed, **WASD** moves its gripper instead. |
+| **WASD** or **arrow keys** | Walk around the base. In rover mode, **W/S** drive and **A/D** steer. While the manipulator is deployed, **WASD** moves its gripper instead. In the landslide survey, **WASD** or arrows select the flow direction. |
 | **E** | Interact with the nearby computer, bed, growing bed, underground ice extraction site, unloading point, or mission objective. With the manipulator active, grab the sample or store it in the tray. |
+| **Left mouse button** | Mark debris clusters and select direction buttons in the Mission 2 survey. |
 | **M** | Open or close the rover map. |
 | **Mouse wheel** | Adjust rover drive power. |
 | **On/off switch** | Toggle rover systems. Switch off for protection during a solar flare. |
-| **Esc** | Cancel the manipulator if active; otherwise close the map first. From rover control, return to the computer. At the base, open the menu. |
+| **Esc** | Cancel the manipulator or landslide survey if active; otherwise close the map first. From rover control, return to the computer. At the base, open the menu. |
 | **Up/Down** or **Tab**, then **Enter** or **Space** | Select and confirm a menu option. The menu also supports the mouse. |
 | **Enter** on the result screen | Begin a new attempt with fresh supplies and mission progress. |
 
@@ -94,12 +95,12 @@ Use `camelCase` for variables and functions, `PascalCase` for class names, and a
 
 ## Research missions
 
-Open the rover map with **M** to see eight numbered research sites and their progress. Drive close to a marker and press **E** once for each step shown in the interaction hint. Most missions use two interactions at the same site. Missions can be attempted in any order, subject to the requirements below. Research actions are simplified virtual measurements; marker positions are chosen for gameplay rather than precise geographic accuracy.
+Open the rover map with **M** to see eight numbered research sites and their progress. Drive close to a marker and press **E** once for each step shown in the interaction hint. Missions 1, 2 and 7 include interactive tasks described below; other missions currently use simplified E interactions and resource requirements. Missions can be attempted in any order, subject to the requirements below. Research actions are simplified virtual measurements; marker positions are chosen for gameplay rather than precise geographic accuracy.
 
 | # | Mission | Location | How to complete it |
 |---|---|---|---|
 | 1 | **The Ancient Water Mystery** | Hebes / Candor Chasma | Press **E** at the site to deploy the manipulator. Move the gripper to the sample with **WASD** and press **E** to grab it. Move to the left **TRAY** and press **E** to store the sample; only then is collection credited. **Esc** cancels without awarding the sample. Rover driving is disabled while the arm is active. After storage, press **E** to measure mineral composition. Return the rover to the outside of the base. Press **Esc**, approach the control-room computer, and press **E** to analyze the returned sample. This final analysis completes the mission; another **E** resumes rover control. |
-| 2 | **The Great Landslide** | Ius Chasma | Press **E** to map the debris, then again to inspect exposed rock layers. The observations help reconstruct how the landslide changed the canyon. |
+| 2 | **The Great Landslide** | Ius Chasma | Press **E** at site 2 to open the landslide survey. Click **three distinct debris clusters** in the local survey image. After all three are mapped, select the debris-flow direction with **WASD**, arrow keys, or the direction buttons, then press **E** to confirm. Use the cliff and debris fan as evidence; incorrect answers provide a hint and do not complete the mission. **Esc** cancels; completed mapping is retained for the current attempt. Driving is disabled while surveying. The image is a simplified fictional illustration, not a measured NASA orbital image. |
 | 3 | **The Mysterious Dark Streaks** | Melas / Coprates Chasma | Press **E** to compare seasonal images, then again to take a remote measurement. The cause of these streaks remains debated: salts and dry flows are possible explanations, and liquid water is not confirmed. |
 | 4 | **The Geological Archive** | Hebes Chasma | Press **E** to photograph the rock layers, then again to compare their sequence and reconstruct the relative order of geological events. |
 | 5 | **The Lost Underground Reservoir** | Eastern Valles Marineris | Press **E** to map collapsed terrain, then again to scan and discover underground ice. Completing these steps unlocks ice extraction at the same site. Subsequent **E** presses collect ice into the rover, up to five units. Return to the outside of the base and press **E** to unload and melt it: one unit of ice becomes one unit of water in the base inventory. The accessible deposit is a fictional gameplay resource. |
@@ -110,3 +111,23 @@ Open the rover map with **M** to see eight numbered research sites and their pro
 ### Completion and rescue
 
 The mission counter tracks **0/8** through **8/8**. Completing all eight missions while survival reserves remain triggers the rescue ending automatically. Oxygen lasts **30 real-time minutes** and cannot currently be replenished. Exhausted oxygen or provisions ends the attempt; a flat rover battery or signal loss during an unprotected solar flare also causes failure. Press **Enter** on the result screen to begin a new attempt. Mission progress is kept only for the current run.
+
+
+## Interactive mission status and planned expansions
+
+### Available now
+
+- **Mission 1 — The Ancient Water Mystery:** deploy the arm with E, move the gripper with WASD, grab the sample with E, and place it in the left TRAY with E. Collection requires both pickup and storage. Cancel with Esc. Then measure the minerals and return the rover to base for computer analysis.
+- **Mission 2 — The Great Landslide:** map three separate debris clusters with the mouse, infer their direction of travel relative to the cliff, select a direction, and confirm with E. Repeated clicks on the same cluster do not count as additional observations. Only a correct interpretation completes the second stage.
+- **Mission 7 — The Impossible Route:** steer through the gaps between nine collidable rocks and visit all five checkpoints in order. The map displays the route; E validates each checkpoint. Movement and rotation collisions are checked in small steps, with sliding along obstacles instead of a backwards kick.
+- **Missions 5 and 8 already share a resource loop:** discovering ice unlocks extraction; delivered ice melts into water; watering the hydroponic beds replenishes provisions and satisfies a station prerequisite. These interactions are implemented, while the additional minigames below are only proposals.
+
+### Planned only — not yet implemented
+
+| Mission | Proposed interactive expansion | Current behavior |
+|---|---|---|
+| 3 — The Mysterious Dark Streaks | Switch between seasonal images, mark changed areas, and compare possible explanations without treating liquid water as proven. | Two E interactions for image comparison and a remote measurement. |
+| 4 — The Geological Archive | Aim a camera at several formations, collect photographs, and arrange layer/event cards into a relative geological timeline. | Two E interactions for photographs and layer comparison. |
+| 5 — The Lost Underground Reservoir | Scan a grid for an ice signature, choose a drilling location, and control extraction power or drill temperature. | Two E research steps unlock ice; further E presses collect it for delivery and melting at base. |
+| 6 — The Planetary Fracture | Trace fractures on a survey image, measure their directions, and compare elevation profiles. | Two E interactions for fracture mapping and an elevation profile. |
+| 8 — The Canyon Research Station | Place station equipment and connect power, water, and research modules while maintaining operating conditions. | Deliver ice, water plants, then press E near the outside of the base to deploy the station. |
