@@ -2,17 +2,20 @@ import math
 import pygame as pg
 from lib.AssetManager import AssetManager
 from lib.Survival import Survival
+from lib.SettingsMenu import SettingsMenu
 from lib.Interface import Interface as UI
 
 
 class MainMenu:
-    def __init__(self, screen):
+    def __init__(self, screen, survival=None, rover=None):
         self.screen = screen
+        self.survival = survival
+        self.rover = rover
         self.background = AssetManager.get('assets.menu.background')
         self.selected = 0
         self.entries = [('play', 'Begin / resume expedition', True),
                         ('load', 'Save slots coming soon', False),
-                        ('settings', 'Configuration coming soon', False),
+                        ('settings', 'Survival and event probabilities', True),
                         ('quit', 'Close mission control', True)]
         width, height = screen.get_size()
         scale = min(width / 1200, height / 830)
@@ -29,26 +32,34 @@ class MainMenu:
             alpha = round(240-155*(x/max(1,width-1))**0.7)
             pg.draw.line(self.shade,(5,15,26,alpha),(x,0),(x,height))
 
+    def _activate(self, name):
+        if name=='play':return True
+        if name=='quit':return False
+        if name=='settings':
+            if SettingsMenu(self.screen,self.survival,self.rover).run()=='quit':return False
+        return None
+
     def run(self):
         clock = pg.time.Clock()
         while True:
-            for event in pg.event.get():
-                if event.type == pg.QUIT:
-                    return False
-                if event.type == pg.MOUSEMOTION:
+            event=pg.event.poll()
+            while event.type!=pg.NOEVENT:
+                if event.type==pg.QUIT:return False
+                activation=None
+                if event.type==pg.MOUSEMOTION:
                     for i,(_,rect) in enumerate(self.buttons):
                         if rect.collidepoint(event.pos):self.selected=i
-                if event.type == pg.KEYDOWN:
+                elif event.type==pg.KEYDOWN:
                     if event.key in (pg.K_DOWN,pg.K_UP,pg.K_TAB):
-                        self.selected = (self.selected + (-1 if event.key==pg.K_UP else 1)) % 4
+                        self.selected=(self.selected+(-1 if event.key==pg.K_UP else 1))%4
                     elif event.key in (pg.K_RETURN,pg.K_SPACE):
-                        if self.selected==0:return True
-                        if self.selected==3:return False
-                if event.type == pg.MOUSEBUTTONDOWN and event.button==1:
-                    for name,rect in self.buttons:
-                        if rect.collidepoint(event.pos):
-                            if name=='play':return True
-                            if name=='quit':return False
+                        activation=self.entries[self.selected][0]
+                elif event.type==pg.MOUSEBUTTONDOWN and event.button==1:
+                    activation=next((name for name,rect in self.buttons if rect.collidepoint(event.pos)),None)
+                if activation is not None:
+                    result=self._activate(activation)
+                    if result is not None:return result
+                event=pg.event.poll()
             self._render()
             pg.display.flip()
             clock.tick(60)

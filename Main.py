@@ -51,7 +51,7 @@ class Main:
                     elif cls.rover is not None and cls.rover.gameOver:
                         cls.scene = 'signalLost'
                 if cls.scene == 'menu':
-                    if not MainMenu(cls.screen).run():
+                    if not MainMenu(cls.screen,cls.survival,cls.rover).run():
                         break
                     cls.scene = 'base'
                     cls.survivalTicks = pg.time.get_ticks()
