@@ -43,6 +43,7 @@ class Rover(Texture):
     stationarySpeedThreshold = 1.0
     stationaryRechargeDelay = 3.0
     stationaryRechargeRate = 2.0
+    energyConsumptionScale = 1.0
     energyLeakTemperatureC = 0.0
     energyLeakTemperatureRangeC = 10.0
     energyLeakEventRate = 1.0 / 20.0
@@ -518,6 +519,7 @@ class Rover(Texture):
                 - abs(throttle)
                 * powerScale
                 * chargeDrainMultiplier
+                * self.energyConsumptionScale
                 * deltaTime
             )
         else:
@@ -560,7 +562,7 @@ class Rover(Texture):
         if self.energyLeakActive:
             self.charge = max(
                 0.0,
-                self.charge - self.energyLeakDrainRate * deltaTime
+                self.charge - self.energyLeakDrainRate * self.energyConsumptionScale * deltaTime
             )
         if self.charge <= 0.0:
             self.gameOver = True

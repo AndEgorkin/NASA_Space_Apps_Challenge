@@ -7,6 +7,7 @@ from lib.Interface import Interface as UI
 class Survival:
     oxygenDuration = 30 * 60.0
     foodDuration = 15 * 60.0
+    provisionsPerWater = 30.0
     cargoCapacity = 5
     interactionRadius = 280
 
@@ -64,8 +65,9 @@ class Survival:
         else:
             self.wateredPlants += 1
             self.water -= 1
-            self.food = min(100.0, self.food + 30)
-            self.notify('Plants watered: +30 provisions, -1 water.')
+            restored = min(100.0-self.food, self.provisionsPerWater)
+            self.food += restored
+            self.notify(f'Plants watered: +{restored:g} provisions, -1 water.')
 
     def roverHint(self, coords):
         point = pg.Vector2(coords)

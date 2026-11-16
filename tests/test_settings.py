@@ -99,3 +99,48 @@ class SettingsTests(unittest.TestCase):
         with patch('lib.MainMenu.SettingsMenu.run',return_value='quit') as opened:
             pg.event.clear();pg.event.post(pg.event.Event(pg.MOUSEBUTTONDOWN,button=1,pos=rect.center))
             self.assertFalse(menu.run());opened.assert_called_once()
+
+    def testEnergyConsumptionScalesActualDriveDrain(self):
+        keys={pg.K_w:True,pg.K_s:False,pg.K_a:False,pg.K_d:False}
+        def drain(percent):
+            values=GameSettings.current();values['energyUse']=percent
+            GameSettings.apply(values)
+            rover=Rover();rover.charge=60
+            try:
+                with patch('pygame.key.get_pressed',return_value=keys), patch('random.random',return_value=1), patch.multiple(EnvironmentManager,nightBlend=0,surfaceTemperatureC=-23,stormIntensity=0), patch('objects.Chunk.Chunk.terrainHeight',return_value=0), patch('objects.Chunk.Chunk.terrainPixelHeight',return_value=0.42):
+                    for _ in range(60):rover.update(1/60)
+                return 60-rover.charge
+            finally:rover.destroy()
+        baseline=drain(100)
+        self.assertGreater(baseline,0)
+        self.assertAlmostEqual(drain(200),baseline*2)
+        self.assertAlmostEqual(drain(0),0)
+
+    def testRechargeSpeedAndProvisionsGainApplyToGameplay(self):
+        values=GameSettings.current();values.update(rechargeRate=3.2,provisionsGain=12)
+        GameSettings.apply(values)
+        rover=Rover();rover.charge=50;rover.systemsOn=False;rover.stationaryTime=4
+        try:
+            with patch('random.random',return_value=1), patch.multiple(EnvironmentManager,nightBlend=0,surfaceTemperatureC=-23,stormIntensity=0), patch('objects.Chunk.Chunk.terrainHeight',return_value=0), patch('objects.Chunk.Chunk.terrainPixelHeight',return_value=0.42):
+                rover.update(1/60)
+            self.assertAlmostEqual(rover.charge,50+3.2/60)
+        finally:rover.destroy()
+        state=Survival();state.food=80;state.water=2
+        state.waterPlants()
+        self.assertEqual(state.food,92);self.assertEqual(state.water,1)
+        state.waterPlants()
+        self.assertEqual(state.food,100);self.assertEqual(state.water,0)
+        self.assertIn('+8 provisions',state.message)
+
+    def testScrollingAndKeyboardCanReachNewSliders(self):
+        menu=SettingsMenu(self.screen)
+        menu.handleEvent(pg.event.Event(pg.MOUSEWHEEL,y=-8))
+        self.assertGreater(menu.scroll,0)
+        self.assertTrue(menu.contentRect.collidepoint(menu.sliders[-1].center))
+        menu.selected=len(GameSettings.specs)-2
+        menu.handleEvent(pg.event.Event(pg.KEYDOWN,key=pg.K_DOWN))
+        self.assertEqual(menu.selected,len(GameSettings.specs)-1)
+        self.assertTrue(menu.contentRect.collidepoint(menu.sliders[-1].center))
+        menu.handleEvent(pg.event.Event(pg.KEYDOWN,key=pg.K_RIGHT))
+        self.assertEqual(menu.values['provisionsGain'],self.previous['provisionsGain']+1)
+        menu.render()
